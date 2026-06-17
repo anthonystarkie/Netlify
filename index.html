@@ -536,7 +536,7 @@
       <div class="topbar">
         <div>
           <h2 id="pageTitle">League Table</h2>
-          <p class="subtle">Netlify Functions fetch fixtures; every player gets one team in each weighted category.</p>
+          <p class="subtle">Netlify Functions fetch football-data.org results; every player gets one team in each weighted category.</p>
         </div>
         <div class="actions">
           <button id="syncFixtures">Sync results</button>
@@ -652,7 +652,7 @@
             </div>
             <div class="panel-body">
               <div class="notice">
-                Auto-sync only runs during today's match window, from the earliest kickoff until two hours after the latest expected match end. Manual syncs also count toward the daily API budget.
+                Auto-sync only runs during today's match window, from the earliest kickoff until two hours after the latest expected match end. Manual syncs also count toward the app's daily request budget.
               </div>
               <div class="form-actions">
                 <button class="primary" id="syncFixturesPanel" type="button">Sync results</button>
@@ -684,19 +684,19 @@
         <div class="grid">
           <div class="panel span-7">
             <div class="panel-header">
-              <h3>API-Football Settings</h3>
+              <h3>Football-Data.org Settings</h3>
             </div>
             <div class="panel-body">
               <form id="apiForm">
                 <div class="form-grid">
-                  <label>Competition code (e.g., WC, PL, CL)
-                    <input id="apiLeague" placeholder="WC">
+                  <label>Competition code
+                    <input id="apiCompetition" placeholder="WC" autocomplete="off">
                   </label>
                   <label>Season
                     <input id="apiSeason" inputmode="numeric" placeholder="2026">
                   </label>
                 </div>
-                <p class="subtle">Your API key is read from the Netlify environment variable <strong>API_FOOTBALL_KEY</strong>, so family members never need to enter it.</p>
+                <p class="subtle">Your API token is read from the Netlify environment variable <strong>FOOTBALL_DATA_KEY</strong>, so family members never need to enter it.</p>
                 <label style="margin-top:14px">
                   <span><input id="autoSyncEnabled" type="checkbox" style="width:auto; min-height:auto; margin-right:8px">Auto-sync results during live match windows</span>
                 </label>
@@ -763,32 +763,32 @@
     ];
 
     const sampleTeams = [
-      { id: 10, name: "England" },
-      { id: 6, name: "Brazil" },
-      { id: 26, name: "Argentina" },
-      { id: 2, name: "France" },
-      { id: 25, name: "Germany" },
-      { id: 31, name: "Japan" },
-      { id: 20, name: "Morocco" },
-      { id: 2384, name: "Scotland" },
-      { id: 2382, name: "USA" },
-      { id: 9, name: "Spain" },
-      { id: 27, name: "Portugal" },
-      { id: 21, name: "Netherlands" },
-      { id: 15, name: "Mexico" },
-      { id: 7, name: "Uruguay" },
-      { id: 17, name: "Senegal" }
+      { id: 770, name: "England" },
+      { id: 764, name: "Brazil" },
+      { id: 762, name: "Argentina" },
+      { id: 773, name: "France" },
+      { id: 759, name: "Germany" },
+      { id: 769, name: "Japan" },
+      { id: 779, name: "Morocco" },
+      { id: 776, name: "Scotland" },
+      { id: 758, name: "USA" },
+      { id: 760, name: "Spain" },
+      { id: 765, name: "Portugal" },
+      { id: 782, name: "Netherlands" },
+      { id: 771, name: "Mexico" },
+      { id: 788, name: "Uruguay" },
+      { id: 778, name: "Senegal" }
     ];
 
     const sampleFixtures = [
-      fixture(1001, "Group Stage", "England", 10, "USA", 2382, 2, 1),
-      fixture(1002, "Group Stage", "Brazil", 6, "Morocco", 20, 0, 0),
-      fixture(1003, "Group Stage", "France", 2, "Scotland", 2384, 1, 1),
-      fixture(1004, "Round of 32", "Argentina", 26, "Japan", 31, 2, 0),
-      fixture(1005, "Round of 16", "Germany", 25, "Morocco", 20, 1, 2),
-      fixture(1006, "Quarter-finals", "Brazil", 6, "France", 2, 3, 1),
-      fixture(1007, "Semi-finals", "England", 10, "Brazil", 6, 2, 1),
-      fixture(1008, "Final", "England", 10, "Argentina", 26, 1, 0)
+      fixture(1001, "GROUP_STAGE", "England", 770, "USA", 758, 2, 1),
+      fixture(1002, "GROUP_STAGE", "Brazil", 764, "Morocco", 779, 0, 0),
+      fixture(1003, "GROUP_STAGE", "France", 773, "Scotland", 776, 1, 1),
+      fixture(1004, "LAST_32", "Argentina", 762, "Japan", 769, 2, 0),
+      fixture(1005, "LAST_16", "Germany", 759, "Morocco", 779, 1, 2),
+      fixture(1006, "QUARTER_FINALS", "Brazil", 764, "France", 773, 3, 1),
+      fixture(1007, "SEMI_FINALS", "England", 770, "Brazil", 764, 2, 1),
+      fixture(1008, "FINAL", "England", 770, "Argentina", 762, 1, 0)
     ];
 
     function fixture(id, stage, homeName, homeId, awayName, awayId, homeGoals, awayGoals) {
@@ -796,7 +796,7 @@
         id,
         stage,
         utcDate: null,
-        status: "FT",
+        status: "FINISHED",
         home: { id: homeId, name: homeName },
         away: { id: awayId, name: awayName },
         homeGoals,
@@ -805,16 +805,16 @@
     }
 
     const defaultSelections = {
-      elite: { id: 10, name: "England" },
-      challenger: { id: 31, name: "Japan" },
-      midTier: { id: 6, name: "Brazil" },
-      longshot: { id: 2384, name: "Scotland" },
+      elite: { id: 770, name: "England" },
+      challenger: { id: 769, name: "Japan" },
+      midTier: { id: 764, name: "Brazil" },
+      longshot: { id: 776, name: "Scotland" },
       underdog: { id: null, name: "" }
     };
 
     const defaultState = {
       api: {
-        league: "1",
+        competition: "WC",
         season: "2026",
         autoSync: true,
         lastSync: "",
@@ -835,11 +835,11 @@
           name: "Sarah",
           color: "#c84f3a",
           selections: {
-            elite: { id: 26, name: "Argentina" },
-            challenger: { id: 25, name: "Germany" },
-            midTier: { id: 20, name: "Morocco" },
-            longshot: { id: 2382, name: "USA" },
-            underdog: { id: 15, name: "Mexico" }
+            elite: { id: 762, name: "Argentina" },
+            challenger: { id: 759, name: "Germany" },
+            midTier: { id: 779, name: "Morocco" },
+            longshot: { id: 758, name: "USA" },
+            underdog: { id: 771, name: "Mexico" }
           }
         },
         {
@@ -847,11 +847,11 @@
           name: "Ben",
           color: "#16784a",
           selections: {
-            elite: { id: 2, name: "France" },
-            challenger: { id: 9, name: "Spain" },
-            midTier: { id: 27, name: "Portugal" },
-            longshot: { id: 21, name: "Netherlands" },
-            underdog: { id: 7, name: "Uruguay" }
+            elite: { id: 773, name: "France" },
+            challenger: { id: 760, name: "Spain" },
+            midTier: { id: 765, name: "Portugal" },
+            longshot: { id: 782, name: "Netherlands" },
+            underdog: { id: 788, name: "Uruguay" }
           }
         }
       ],
@@ -882,6 +882,10 @@
     function migrateState(saved) {
       if (!saved.owners || !saved.fixtures) return structuredClone(defaultState);
       saved.api = { ...defaultState.api, ...(saved.api || {}) };
+      if (!saved.api.competition) {
+        saved.api.competition = saved.api.league === "1" ? "WC" : (saved.api.league || "WC");
+      }
+      delete saved.api.league;
       saved.availableTeams = saved.availableTeams?.length ? saved.availableTeams : structuredClone(sampleTeams);
       saved.owners = saved.owners.map((owner, index) => ({
         ...owner,
@@ -1001,12 +1005,26 @@
     function normalizeStage(stage) {
       const s = String(stage || "").toLowerCase();
 
-      if (s.includes("last_16")) return "round16";
+      if (s.includes("last_32") || s.includes("round of 32") || s.includes("1/16")) return "round32";
+      if (s.includes("last_16") || s.includes("round of 16") || s.includes("1/8")) return "round16";
       if (s.includes("quarter")) return "quarter";
       if (s.includes("semi")) return "semi";
       if (s.includes("final")) return "final";
 
       return "group";
+    }
+
+    function formatStage(stage) {
+      const labels = {
+        GROUP_STAGE: "Group Stage",
+        LAST_32: "Round of 32",
+        LAST_16: "Round of 16",
+        QUARTER_FINALS: "Quarter-finals",
+        SEMI_FINALS: "Semi-finals",
+        FINAL: "Final",
+        THIRD_PLACE: "Third place"
+      };
+      return labels[stage] || String(stage || "").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
     }
 
     function isComplete(fixtureItem) {
@@ -1188,28 +1206,43 @@
     }
 
     function renderMatches() {
-    const completed = state.fixtures.filter(isComplete);
+      const completed = state.fixtures.filter(isComplete);
+      const latest = completed[completed.length - 1];
+      const impactList = document.getElementById("impactList");
 
-    document.getElementById("matchList").innerHTML =
-      completed.map(item => `
+      if (!latest) {
+        impactList.innerHTML = `<div class="empty">Sync or load results to see who gained points.</div>`;
+      } else {
+        const impacts = matchImpact(latest);
+        impactList.innerHTML = `
+          <div class="impact-item">
+            <div>
+              <strong>${latest.home.name} ${latest.homeGoals}-${latest.awayGoals} ${latest.away.name}</strong>
+              <div class="muted-row">${formatStage(latest.stage)}</div>
+            </div>
+            <span class="pill">Latest</span>
+          </div>
+          ${impacts.map(item => `
+            <div class="impact-item">
+              <div>
+                <strong>${item.owner.name}</strong>
+                <div class="muted-row">${item.teams.join(", ")}</div>
+              </div>
+              <span class="score">+${formatPoints(item.points)}</span>
+            </div>
+          `).join("") || `<div class="empty">No selected teams in this fixture.</div>`}
+        `;
+      }
+
+      document.getElementById("matchList").innerHTML = completed.map(item => `
         <div class="match-row">
           <div>
             <strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
-            <div class="muted-row">${item.stage}</div>
+            <div class="muted-row">${formatStage(item.stage)}${item.utcDate ? " / " + new Date(item.utcDate).toLocaleString() : ""}</div>
           </div>
           <span class="pill">${displayStatus(item.status)}</span>
         </div>
       `).join("") || `<div class="empty">No completed fixtures yet.</div>`;
-
-        document.getElementById("matchList").innerHTML = completed.map(item => `
-          <div class="match-row">
-            <div>
-              <strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
-              <div class="muted-row">${item.stage} ${item.utcDate ? " / " + new Date(item.utcDate).toLocaleString() : ""}</div>
-            </div>
-            <span class="pill">${item.status}</span>
-          </div>
-        `).join("") || `<div class="empty">No completed fixtures yet.</div>`;
     }
 
     function renderSelects() {
@@ -1235,7 +1268,7 @@
     }
 
     function renderApi() {
-      document.getElementById("apiLeague").value = state.api.league || "1";
+      document.getElementById("apiCompetition").value = state.api.competition || "WC";
       document.getElementById("apiSeason").value = state.api.season || "2026";
       document.getElementById("autoSyncEnabled").checked = state.api.autoSync !== false;
       const remaining = requestsRemainingToday();
@@ -1243,7 +1276,8 @@
 
       document.getElementById("apiSummary").innerHTML = `
         <div class="api-row"><strong>Status</strong><span class="pill">${state.api.status || "Ready"}</span></div>
-        <div class="api-row"><strong>API key</strong><span class="pill">Stored in Netlify</span></div>
+        <div class="api-row"><strong>API token</strong><span class="pill">Stored in Netlify</span></div>
+        <div class="api-row"><strong>Competition</strong><span class="pill">${state.api.competition || "WC"}</span></div>
         <div class="api-row"><strong>Last synced</strong><span class="pill">${formatDateTime(state.api.lastSyncIso)}</span></div>
         <div class="api-row"><strong>Requests today</strong><span class="score">${requestsUsedToday()}/${apiDailyLimit}</span></div>
         <div class="api-row"><strong>Requests remaining</strong><span class="score">${remaining}</span></div>
@@ -1305,55 +1339,29 @@
 
     async function fetchApi(kind) {
       if (window.location.protocol === "file:") {
-        throw new Error("Run in Netlify or Netlify Dev for live API.");
+        throw new Error("Live sync needs the Netlify app URL or Netlify Dev. This local file preview can only use sample data.");
       }
 
       const params = new URLSearchParams({
         kind,
-        competition: state.api.league || "WC"
+        competition: state.api.competition || "WC"
       });
 
-      /*const response = await fetch(`/.netlify/functions/api-football?${params}`);
+      const season = (state.api.season || "").trim();
+      if (season) params.set("season", season);
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "API error");
+      const response = await fetch(`/.netlify/functions/football-data?${params.toString()}`);
+
+      if (response.status === 404) {
+        throw new Error("Netlify Function not found. Deploy the whole folder to Netlify, or run with Netlify Dev locally.");
       }
 
       const data = await response.json();
-
+      if (!response.ok) throw new Error(data.error || `API request failed: ${response.status}`);
+      if (data.error) throw new Error(data.error);
       recordApiRequest();
       saveState();
-
-      return data; // 
-      */
-
-    const response = await fetch(url.toString(), {
-      headers: {
-        "X-Auth-Token": apiKey
-      }
-    });
-
-    const text = await response.text();
-
-    let payload;
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      return json(500, {
-        error: "Upstream API did not return JSON",
-        snippet: text.slice(0, 200) // <-- VERY IMPORTANT
-      });
-    }
-
-    if (!response.ok) {
-      return json(response.status, {
-        error: payload?.message || "API error"
-      });
-    }
-
-    return json(200, payload);
-
+      return data;
     }
 
     async function syncTeamsFromApi() {
@@ -1386,7 +1394,9 @@
       try {
         const data = await fetchApi("matches");
 
-        state.fixtures = (data.matches || []).map(match => ({
+        state.fixtures = (data.matches || [])
+          .filter(match => match.homeTeam && match.awayTeam)
+          .map(match => ({
           id: match.id,
           stage: match.stage || match.group || "",
 
@@ -1512,7 +1522,7 @@
 
     document.getElementById("apiForm").addEventListener("submit", event => {
       event.preventDefault();
-      state.api.league = document.getElementById("apiLeague").value.trim() || "1";
+      state.api.competition = document.getElementById("apiCompetition").value.trim() || "WC";
       state.api.season = document.getElementById("apiSeason").value.trim() || "2026";
       state.api.autoSync = document.getElementById("autoSyncEnabled").checked;
       state.api.status = "Settings saved";

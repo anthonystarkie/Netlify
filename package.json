@@ -4,10 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "netlify dev",
-    "check": "node --check netlify/functions/api-football.js"
+    "check": "node --check netlify/functions/football-data.js"
   },
   "devDependencies": {
     "netlify-cli": "^17.38.1"
   }
 }
-
