@@ -896,16 +896,6 @@
     const minimumAutoSyncMs = 5 * 60 * 1000;
     let autoSyncTimer = null;    
     let state = structuredClone(defaultState);
-
-   /*async function loadStateFromServer() {
-        const res = await fetch("/.netlify/functions/state");
-        const data = await res.json();
-
-        return data && Object.keys(data).length
-          ? data
-          : structuredClone(defaultState);
-      }
-          */
     
     loadStateFromServer().then(serverState => {
       state = serverState;
@@ -974,6 +964,15 @@
         body: JSON.stringify(state)
       });
     }
+
+    async function loadStateFromServer() {
+        const res = await fetch("/.netlify/functions/state");
+        const data = await res.json();
+
+        return data && Object.keys(data).length
+          ? data
+          : structuredClone(defaultState);
+      }
 
     function todayKey(date = new Date()) {
       return date.toLocaleDateString("en-CA");
