@@ -1186,7 +1186,7 @@
             <strong>${owner.name}</strong>
             <div class="tier-list" style="margin-top:8px">${tiers.map(tier => {
               const team = owner.selections[tier.id] || blankTeam();
-              return `<span class="pill tier-pill"><strong>${tier.label}</strong>: {team.flag ? `<img src="${team.flag}" class="flag" />` : ""}; ${team.name || "Empty"}</span>`;
+              return `<span class="pill tier-pill"><strong>${tier.label}</strong>: {team.flag ? `<img src="${team.flag}" class="flag" />` : ""} ${team.name || "Empty"}</span>`;
             }).join("")}</div>
           </div>
           <button class="danger" data-remove-owner="${owner.id}" type="button">Remove</button>
