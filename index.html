@@ -1337,7 +1337,25 @@
       render();
     }
 
-    async function fetchApi(kind) {
+    async function parseFunctionResponse(response) {
+      const text = await response.text();
+      const trimmed = text.trim();
+
+      if (trimmed.startsWith("<")) {
+        throw new Error(
+          "Received HTML instead of JSON from /.netlify/functions/football-data. " +
+          "Run with 'npm run dev' locally or redeploy the site so Netlify Functions are available."
+        );
+      }
+
+      try {
+        return JSON.parse(trimmed || "{}");
+      } catch {
+        throw new Error("Netlify function returned invalid JSON.");
+      }
+    }
+
+    async function fetchApi(kind, options = {}) {
       if (window.location.protocol === "file:") {
         throw new Error("Live sync needs the Netlify app URL or Netlify Dev. This local file preview can only use sample data.");
       }
@@ -1348,7 +1366,7 @@
       });
 
       const season = (state.api.season || "").trim();
-      if (season) params.set("season", season);
+      if (season && !options.skipSeason) params.set("season", season);
 
       const response = await fetch(`/.netlify/functions/football-data?${params.toString()}`);
 
@@ -1356,12 +1374,24 @@
         throw new Error("Netlify Function not found. Deploy the whole folder to Netlify, or run with Netlify Dev locally.");
       }
 
-      const data = await response.json();
+      const data = await parseFunctionResponse(response);
       if (!response.ok) throw new Error(data.error || `API request failed: ${response.status}`);
       if (data.error) throw new Error(data.error);
       recordApiRequest();
       saveState();
       return data;
+    }
+
+    async function testApiConnection() {
+      updateApiStatus("Testing connection...");
+
+      try {
+        const data = await fetchApi("competition", { skipSeason: true });
+        const name = data.name || state.api.competition || "WC";
+        updateApiStatus(`Connected to football-data.org (${name})`);
+      } catch (error) {
+        updateApiStatus(error.message);
+      }
     }
 
     async function syncTeamsFromApi() {
@@ -1535,7 +1565,7 @@
     document.getElementById("syncTeams").addEventListener("click", syncTeamsFromApi);
     document.getElementById("syncFixtures").addEventListener("click", () => syncFixturesFromApi());
     document.getElementById("syncFixturesPanel").addEventListener("click", () => syncFixturesFromApi());
-    document.getElementById("testApi").addEventListener("click", syncTeamsFromApi);
+    document.getElementById("testApi").addEventListener("click", testApiConnection);
     document.getElementById("autoSyncEnabled").addEventListener("change", event => {
       state.api.autoSync = event.target.checked;
       state.api.status = event.target.checked ? "Auto-sync enabled" : "Auto-sync paused";

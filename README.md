@@ -30,7 +30,15 @@ In the app, set:
 - **Competition code** — `WC` for the FIFA World Cup
 - **Season** — four-digit year, e.g. `2026`
 
-## API Request Budget
+## Troubleshooting
+
+**"Received HTML instead of JSON" or "Unexpected token '<'"**
+
+1. Run the app through Netlify (`npm run dev` locally, or your deployed Netlify URL) — opening `index.html` directly will not load functions.
+2. In Netlify → Site settings → Environment variables, set `FOOTBALL_DATA_KEY` to your football-data.org token (not an old API-Football key).
+3. Remove any old `API_FOOTBALL_KEY` / `API_FOOTBALL_BASE_URL` variables. If you set `FOOTBALL_DATA_BASE_URL`, it must be exactly `https://api.football-data.org/v4` (the API host, not `https://www.football-data.org`).
+4. Redeploy after changing environment variables so `netlify/functions/football-data.js` is live.
+
 
 The free football-data.org plan allows 10 requests per minute. The app tracks request usage in the browser and only auto-syncs results during a match-day window:
 
