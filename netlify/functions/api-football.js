@@ -1,38 +1,60 @@
-const API_BASE_URL = process.env.API_FOOTBALL_BASE_URL || "https://v3.football.api-sports.io";
+const API_BASE_URL =
+  process.env.FOOTBALL_DATA_BASE_URL ||
+  "https://api.football-data.org/v4";
 
 exports.handler = async function handler(event) {
-  const apiKey = process.env.API_FOOTBALL_KEY;
+  const apiKey = process.env.FOOTBALL_DATA_KEY;
+
   const params = event.queryStringParameters || {};
   const kind = params.kind;
-  const league = params.league || "1";
-  const season = params.season || "2026";
+  const competition = params.competition || "WC";
 
   if (!apiKey) {
     return json(500, {
-      error: "Missing API_FOOTBALL_KEY in Netlify environment variables."
+      error: "Missing FOOTBALL_DATA_KEY in Netlify environment variables."
     });
   }
 
-  if (!["teams", "fixtures"].includes(kind)) {
+  if (!["teams", "matches", "standings"].includes(kind)) {
     return json(400, {
-      error: "Invalid API request. Use kind=teams or kind=fixtures."
+      error:
+        "Invalid request. Use kind=teams, kind=matches, or kind=standings."
     });
   }
 
-  if (!/^\d+$/.test(String(league)) || !/^\d{4}$/.test(String(season))) {
+  if (!/^[A-Z0-9_-]+$/i.test(String(competition))) {
     return json(400, {
-      error: "League and season must be numeric."
+      error: "Invalid competition code."
     });
   }
 
-  const url = new URL(`/${kind}`, API_BASE_URL);
-  url.searchParams.set("league", league);
-  url.searchParams.set("season", season);
+  let endpoint;
+
+  switch (kind) {
+    case "teams":
+      endpoint = `/competitions/${competition}/teams`;
+      break;
+
+    case "matches":
+      endpoint = `/competitions/${competition}/matches`;
+      break;
+
+    case "standings":
+      endpoint = `/competitions/${competition}/standings`;
+      break;
+
+    default:
+      return json(400, {
+        error: "Unsupported request type."
+      });
+  }
+
+  const url = new URL(endpoint, API_BASE_URL);
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(url.toString(), {
       headers: {
-        "x-apisports-key": apiKey
+        "X-Auth-Token": apiKey
       }
     });
 
@@ -40,22 +62,20 @@ exports.handler = async function handler(event) {
 
     if (!response.ok) {
       return json(response.status, {
-        error: payload?.message || `API-Football request failed with status ${response.status}.`
+        error:
+          payload?.message ||
+          `Football-Data request failed with status ${response.status}.`
       });
     }
 
-    if (payload.errors && Object.keys(payload.errors).length) {
-      return json(502, {
-        error: flattenApiErrors(payload.errors)
-      });
-    }
-
-    return json(200, {
-      response: payload.response || []
-    }, "public, max-age=0, s-maxage=240, stale-while-revalidate=60");
+    return json(
+      200,
+      payload,
+      "public, max-age=0, s-maxage=300, stale-while-revalidate=60"
+    );
   } catch (error) {
     return json(500, {
-      error: error.message || "Unexpected API proxy error."
+      error: error.message || "Unexpected Football-Data proxy error."
     });
   }
 };
@@ -69,10 +89,4 @@ function json(statusCode, body, cacheControl = "no-store") {
     },
     body: JSON.stringify(body)
   };
-}
-
-function flattenApiErrors(errors) {
-  if (Array.isArray(errors)) return errors.join(", ");
-  if (typeof errors === "string") return errors;
-  return Object.values(errors).flat().join(", ") || "API-Football returned an error.";
 }
