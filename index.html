@@ -1313,7 +1313,7 @@
         competition: state.api.league || "WC"
       });
 
-      const response = await fetch(`/.netlify/functions/api-football?${params}`);
+      /*const response = await fetch(`/.netlify/functions/api-football?${params}`);
 
       if (!response.ok) {
         const err = await response.json();
@@ -1326,6 +1326,33 @@
       saveState();
 
       return data; // 
+      */
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        "X-Auth-Token": apiKey
+      }
+    });
+
+    const text = await response.text();
+
+    let payload;
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      return json(500, {
+        error: "Upstream API did not return JSON",
+        snippet: text.slice(0, 200) // <-- VERY IMPORTANT
+      });
+    }
+
+    if (!response.ok) {
+      return json(response.status, {
+        error: payload?.message || "API error"
+      });
+    }
+
+    return json(200, payload);
 
     }
 
