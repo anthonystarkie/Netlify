@@ -1,10 +1,12 @@
-const DEFAULT_BASE_URL = "https://api.football-data.org/v4";
+//const DEFAULT_BASE_URL = "https://api.football-data.org/v4";
+const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
+
 
 function resolveBaseUrl() {
   const configured = (process.env.FOOTBALL_DATA_BASE_URL || "").trim();
 
   if (!configured) {
-    return DEFAULT_BASE_URL;
+    return FOOTBALL_DATA_BASE_URL;
   }
 
   if (!/^https:\/\/api\.football-data\.org\/v4\/?$/i.test(configured)) {
@@ -100,6 +102,20 @@ exports.handler = async function handler(event) {
         error: "Unsupported request type."
       });
   }
+
+
+const url = `${FOOTBALL_DATA_BASE_URL}${endpoint}`;
+
+// ✅ ADD THIS DEBUG BLOCK
+return json(200, {
+  debug: {
+    apiKeyExists: !!apiKey,
+    baseUrl: FOOTBALL_DATA_BASE_URL,
+    endpoint,
+    finalUrl: url
+  }
+});
+
 
   let baseUrl;
 
