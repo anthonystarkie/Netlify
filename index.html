@@ -305,6 +305,15 @@
       box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
     }
 
+    .flag {
+      width: 16px;
+      height: 12px;
+      object-fit: cover;
+      border-radius: 2px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
     .tier-pill {
       justify-content: center;
       border-radius: 6px;
@@ -1144,7 +1153,7 @@
             <td>
               ${item.team?.name ? `
                 <div class="pill" style="display:flex;align-items:center;gap:6px;">
-                  ${item.team.flag ? `<img src="${item.team.flag}" style="width:16px;height:12px;object-fit:cover;">` : ""}
+                  ${item.team.flag ? <img src="${item.team.flag}" style="width:16px;height:12px;object-fit:cover;">` : ""}
                   ${item.team.name}
                 </div>
               ` : `<span class="muted-row">Empty</span>`}
@@ -1177,7 +1186,7 @@
             <strong>${owner.name}</strong>
             <div class="tier-list" style="margin-top:8px">${tiers.map(tier => {
               const team = owner.selections[tier.id] || blankTeam();
-              return `<span class="pill tier-pill"><strong>${tier.label}</strong>: ${team.name || "Empty"}</span>`;
+              return `<span class="pill tier-pill"><strong>${tier.label}</strong>: {team.flag ? `<img src="${team.flag}" class="flag" />` : ""}; ${team.name || "Empty"}</span>`;
             }).join("")}</div>
           </div>
           <button class="danger" data-remove-owner="${owner.id}" type="button">Remove</button>
