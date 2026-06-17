@@ -557,8 +557,12 @@
                 <thead>
                   <tr>
                     <th>Rank</th>
-                    <th>Family member</th>
-                    <th>Teams</th>
+                    <th>Family member</th>                    
+                    <th>Elite</th>
+                    <th>Challenger</th>
+                    <th>Mid-Tier</th>
+                    <th>Longshot</th>
+                    <th>Underdog</th>
                     <th>Points</th>
                   </tr>
                 </thead>
@@ -1125,15 +1129,29 @@
 
     function renderStandings() {
       const rows = ownerRows();
-      document.getElementById("standingsBody").innerHTML = rows.map((owner, index) => `
-        <tr>
-          <td><span class="rank">${index + 1}</span></td>
-          <td><span class="owner-name">${owner.name}</span></td>
-          <td><span class="tier-list">${owner.contributions.map(item => `
-            <span class="pill tier-pill"><strong>${item.tier.label}</strong>: ${item.team.name || "Empty"}</span>
-          `).join("")}</span></td>
-          <td><span class="score">${formatPoints(owner.points)}</span></td>
-        </tr>
+      document.getElementById("standingsBody").innerHTML = rows.map((owner, index) => `  
+      <tbody id="standingsBody">
+        ${rows.map((owner, index) => `
+          <tr>
+            <td><span class="rank">${index + 1}</span></td>
+
+            <td><span class="owner-name">${owner.name}</span></td>
+
+            ${owner.contributions.map(item => `
+              <td>
+                ${item.team?.name ? `
+                  <div class="pill" style="display:flex;align-items:center;gap:4px;">
+                    ${item.team.flag ? `<img src="${item.team.flag}" style="width:16px;height:12px;">` : ""}
+                    ${item.team.name}
+                  </div>
+                ` : `<span class="muted-row">Empty</span>`}
+              </td>
+            `).join("")}
+
+            <td><span class="score">${formatPoints(owner.points)}</span></td>
+          </tr>
+        `).join("")}
+      </tbody>
       `).join("");
 
       const leader = rows[0];
@@ -1261,6 +1279,7 @@
         ...state.availableTeams.map(team => {
           const disabled = unavailable.has(String(team.id)) ? "disabled" : "";
           const selected = current?.id && String(current.id) === String(team.id) ? "selected" : "";
+          const flag = team.flag ? `<img src="${team.flag}" style="width:16px;height:12px;margin-right:6px;vertical-align:middle;">` : "";
           const label = unavailable.has(String(team.id)) ? `${team.name} - already picked` : team.name;
           return `<option value="${team.id}" ${disabled} ${selected}>${label}</option>`;
         })
@@ -1408,7 +1427,8 @@
         state.availableTeams = (data.teams || [])
           .map(team => ({
             id: team.id,
-            name: team.name
+            name: team.name,
+            flag: team.area?.flag || team.crest || ""
           }))
           .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -1553,7 +1573,7 @@
         owner.selections[tierId] = blankTeam();
       } else if (!selectedTeamKeys(ownerId, tierId).has(String(selectedId))) {
         const apiTeam = state.availableTeams.find(team => String(team.id) === String(selectedId));
-        if (apiTeam) owner.selections[tierId] = { id: apiTeam.id, name: apiTeam.name };
+        if (apiTeam) owner.selections[tierId] = { id: apiTeam.id, name: apiTeam.name, flag: apiTeam.flag };
       }
       render();
     });
