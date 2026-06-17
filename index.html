@@ -1153,7 +1153,7 @@
             <td>
               ${item.team?.name ? `
                 <div class="pill" style="display:flex;align-items:center;gap:6px;">
-                  ${item.team.flag ? `<img src="${item.team.flag}" class="flag">` : ""}
+                  ${item.team.flag ? '<img src="${item.team.flag}" class="flag">' : ""}
                   ${item.team.name}
                 </div>
               ` : `<span class="muted-row">Empty</span>`}
@@ -1265,7 +1265,7 @@
       document.getElementById("matchList").innerHTML = completed.map(item => `
         <div class="match-row">
           <div>
-            <img src="${item.team.flag}" class="flag"><strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
+            ${item.team.flag ? `<img src="${item.team.flag}" class="flag">` : ""}<strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
             <div class="muted-row">${formatStage(item.stage)}${item.utcDate ? " / " + new Date(item.utcDate).toLocaleString() : ""}</div>
           </div>
           <span class="pill">${displayStatus(item.status)}</span>
