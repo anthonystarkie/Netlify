@@ -689,8 +689,8 @@
             <div class="panel-body">
               <form id="apiForm">
                 <div class="form-grid">
-                  <label>League ID
-                    <input id="apiLeague" inputmode="numeric" placeholder="1">
+                  <label>Competition code (e.g., WC, PL, CL)
+                    <input id="apiLeague" placeholder="WC">
                   </label>
                   <label>Season
                     <input id="apiSeason" inputmode="numeric" placeholder="2026">
@@ -861,7 +861,7 @@
 
     const storageKey = "familyWorldCupFantasyApiPrototype";
     const colors = ["#0f6f78", "#c84f3a", "#16784a", "#b57a13", "#2462a8", "#7a4e9f"];
-    const completedStatuses = new Set(["FT", "AET", "PEN"]);
+    const completedStatuses = new Set(["FINISHED"]);
     const apiDailyLimit = 100;
     const expectedMatchDurationMs = 2 * 60 * 60 * 1000;
     const postGameBufferMs = 2 * 60 * 60 * 1000;
@@ -999,17 +999,22 @@
     }
 
     function normalizeStage(stage) {
-      const text = String(stage || "").toLowerCase();
-      if (text.includes("round of 32") || text.includes("1/16")) return "round32";
-      if (text.includes("round of 16") || text.includes("1/8")) return "round16";
-      if (text.includes("quarter")) return "quarter";
-      if (text.includes("semi")) return "semi";
-      if (text.includes("final")) return "final";
+      const s = String(stage || "").toLowerCase();
+
+      if (s.includes("last_16")) return "round16";
+      if (s.includes("quarter")) return "quarter";
+      if (s.includes("semi")) return "semi";
+      if (s.includes("final")) return "final";
+
       return "group";
     }
 
     function isComplete(fixtureItem) {
-      return completedStatuses.has(fixtureItem.status) && fixtureItem.homeGoals !== null && fixtureItem.awayGoals !== null;
+      return (
+        completedStatuses.has(fixtureItem.status) &&
+        fixtureItem.homeGoals !== null &&
+        fixtureItem.awayGoals !== null
+      );
     }
 
     function fixtureIncludesTeam(fixtureItem, teamId) {
@@ -1161,6 +1166,11 @@
       return duplicates;
     }
 
+    function displayStatus(status) {
+      if (status === "FINISHED") return "FT";
+      return status;
+    }
+
     function renderRules() {
       document.getElementById("matchRulesList").innerHTML = tiers.map(tier => `
         <div class="rule-row">
@@ -1178,42 +1188,28 @@
     }
 
     function renderMatches() {
-      const completed = state.fixtures.filter(isComplete);
-      const latest = completed[completed.length - 1];
-      const impactList = document.getElementById("impactList");
-      if (!latest) {
-        impactList.innerHTML = `<div class="empty">Sync or load results to see who gained points.</div>`;
-      } else {
-        const impacts = matchImpact(latest);
-        impactList.innerHTML = `
-          <div class="impact-item">
-            <div>
-              <strong>${latest.home.name} ${latest.homeGoals}-${latest.awayGoals} ${latest.away.name}</strong>
-              <div class="muted-row">${latest.stage}</div>
-            </div>
-            <span class="pill">Latest</span>
-          </div>
-          ${impacts.map(item => `
-            <div class="impact-item">
-              <div>
-                <strong>${item.owner.name}</strong>
-                <div class="muted-row">${item.teams.join(", ")}</div>
-              </div>
-              <span class="score">+${formatPoints(item.points)}</span>
-            </div>
-          `).join("") || `<div class="empty">No selected teams in this fixture.</div>`}
-        `;
-      }
+    const completed = state.fixtures.filter(isComplete);
 
-      document.getElementById("matchList").innerHTML = completed.map(item => `
+    document.getElementById("matchList").innerHTML =
+      completed.map(item => `
         <div class="match-row">
           <div>
             <strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
-            <div class="muted-row">${item.stage} ${item.utcDate ? " / " + new Date(item.utcDate).toLocaleString() : ""}</div>
+            <div class="muted-row">${item.stage}</div>
           </div>
-          <span class="pill">${item.status}</span>
+          <span class="pill">${displayStatus(item.status)}</span>
         </div>
       `).join("") || `<div class="empty">No completed fixtures yet.</div>`;
+
+        document.getElementById("matchList").innerHTML = completed.map(item => `
+          <div class="match-row">
+            <div>
+              <strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
+              <div class="muted-row">${item.stage} ${item.utcDate ? " / " + new Date(item.utcDate).toLocaleString() : ""}</div>
+            </div>
+            <span class="pill">${item.status}</span>
+          </div>
+        `).join("") || `<div class="empty">No completed fixtures yet.</div>`;
     }
 
     function renderSelects() {
@@ -1309,64 +1305,88 @@
 
     async function fetchApi(kind) {
       if (window.location.protocol === "file:") {
-        throw new Error("Live sync needs the Netlify app URL or Netlify Dev. This local file preview can only use sample data.");
+        throw new Error("Run in Netlify or Netlify Dev for live API.");
       }
 
       const params = new URLSearchParams({
         kind,
-        league: state.api.league,
-        season: state.api.season
+        competition: state.api.league || "WC"
       });
 
-      const response = await fetch(`/.netlify/functions/api-football?${params.toString()}`);
+      const response = await fetch(`/.netlify/functions/api-football?${params}`);
 
-      if (response.status === 404) {
-        throw new Error("Netlify Function not found. Deploy the whole folder to Netlify, or run with Netlify Dev locally.");
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "API error");
       }
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || `API request failed: ${response.status}`);
-      if (data.error) throw new Error(data.error);
+
       recordApiRequest();
       saveState();
-      return data.response || [];
+
+      return data; // 
+
     }
 
     async function syncTeamsFromApi() {
       updateApiStatus("Syncing teams...");
+
       try {
-        const teamsResponse = await fetchApi("teams");
-        state.availableTeams = teamsResponse
-          .map(item => item.team)
-          .filter(Boolean)
-          .map(team => ({ id: team.id, name: team.name }))
+        const data = await fetchApi("teams");
+
+        state.availableTeams = (data.teams || [])
+          .map(team => ({
+            id: team.id,
+            name: team.name
+          }))
           .sort((a, b) => a.name.localeCompare(b.name));
+
         updateApiStatus(`Synced ${state.availableTeams.length} teams`);
-      } catch (error) {
-        updateApiStatus(error.message);
+
+      } catch (err) {
+        updateApiStatus(err.message);
       }
+
+      render();
     }
 
+
+    
     async function syncFixturesFromApi(options = {}) {
-      updateApiStatus(options.automatic ? "Auto-syncing fixtures..." : "Syncing fixtures...");
+      updateApiStatus(options.automatic ? "Auto-syncing..." : "Syncing fixtures...");
+
       try {
-        const fixturesResponse = await fetchApi("fixtures");
-        state.fixtures = fixturesResponse.map(item => ({
-          id: item.fixture.id,
-          stage: item.league.round || "",
-          utcDate: item.fixture.date || null,
-          status: item.fixture.status.short,
-          home: { id: item.teams.home.id, name: item.teams.home.name },
-          away: { id: item.teams.away.id, name: item.teams.away.name },
-          homeGoals: item.goals.home,
-          awayGoals: item.goals.away
+        const data = await fetchApi("matches");
+
+        state.fixtures = (data.matches || []).map(match => ({
+          id: match.id,
+          stage: match.stage || match.group || "",
+
+          utcDate: match.utcDate || null,
+          status: match.status,
+
+          home: {
+            id: match.homeTeam.id,
+            name: match.homeTeam.name
+          },
+          away: {
+            id: match.awayTeam.id,
+            name: match.awayTeam.name
+          },
+
+          homeGoals: match.score?.fullTime?.home ?? null,
+          awayGoals: match.score?.fullTime?.away ?? null
         }));
+
         state.api.lastSyncIso = new Date().toISOString();
-        state.api.lastSync = formatDateTime(state.api.lastSyncIso);
-        state.api.status = `Synced ${state.fixtures.filter(isComplete).length} completed results`;
-      } catch (error) {
-        state.api.status = error.message;
+        state.api.status =
+          `Synced ${state.fixtures.filter(isComplete).length} completed matches`;
+
+      } catch (err) {
+        state.api.status = err.message;
       }
+
       scheduleAutoSync();
       render();
     }
