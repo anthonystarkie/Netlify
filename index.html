@@ -61,7 +61,7 @@
     .app-shell {
       min-height: 100vh;
       display: grid;
-      grid-template-columns: 280px minmax(0, 1fr);
+      grid-template-columns: 180px minmax(0, 1fr);
     }
 
     aside {
@@ -91,6 +91,15 @@
       color: white;
       background: linear-gradient(135deg, var(--green), var(--teal) 55%, var(--coral));
       font-weight: 800;
+    }
+
+    .team-flag {
+      width: 16px;
+      height: 12px;
+      object-fit: cover;
+      border-radius: 2px;
+      vertical-align: middle;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
     }
 
     h1 {
@@ -290,6 +299,7 @@
     .pill {
       display: inline-flex;
       align-items: center;
+      gap: 6px;
       min-height: 26px;
       padding: 4px 9px;
       border: 1px solid var(--line);
@@ -587,7 +597,7 @@
 
           <div class="panel span-4">
             <div class="panel-header">
-              <h3>Team Contribution</h3>
+              <h3>Team Contribution (1st: ${leader ? leader.name : ""})</h3>
             </div>
             <div class="panel-body">
               <div class="bar-list" id="projectionBars"></div>
@@ -1152,8 +1162,12 @@
           ${owner.contributions.map(item => `
             <td>
               ${item.team?.name ? `
-                <div class="pill" style="display:flex;align-items:center;gap:6px;">
-                  ${item.team.name}
+                <div class="pill" style="display:flex;align-items:center;gap:6px;">                 
+                ${item.team.flag 
+                          ? `<img src="${item.team.flag}" class="team-flag">`
+                          : ""
+                        }
+                ${item.team.name}
                 </div>
               ` : `<span class="muted-row">Empty</span>`}
             </td>
@@ -1176,6 +1190,12 @@
           <div class="track"><div class="fill" style="width:${Math.max(4, item.total / maxContribution * 100)}%; background:${leader.color}"></div></div>
         </div>
       `).join("");
+
+        const contributionTitle = document.querySelector(".panel-header h3");
+
+        if (contributionTitle && leader) {
+          contributionTitle.textContent = `Team Contribution (${leader.name})`;
+        }
     }
 
     function renderOwners() {
