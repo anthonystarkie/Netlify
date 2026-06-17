@@ -1397,10 +1397,13 @@
     async function syncTeamsFromApi() {
       updateApiStatus("Syncing teams...");
 
-      console.log("API TEAMS:", data);
-
       try {
+
+        console.log("API TEAMS:", data);
+
         const data = await fetchApi("teams");
+
+        console.log("API returned: ", data);
 
         state.availableTeams = (data.teams || [])
           .map(team => ({
@@ -1412,6 +1415,7 @@
         updateApiStatus(`Synced ${state.availableTeams.length} teams`);
 
       } catch (err) {
+        console.error("Teams error: ", err);
         updateApiStatus(err.message);
       }
 
