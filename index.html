@@ -1113,7 +1113,7 @@
           const team = owner.selections[tier.id];
           if (!team?.id || !fixtureIncludesTeam(fixtureItem, team.id)) return null;
           const score = scoreTeam(team, tier, [fixtureItem]);
-          return `${tier.label}: {team.flag ? `<img src="${item.team.flag}" class="flag">` : ""} ${team.name} +${formatPoints(score.total)}`;
+          return `${tier.label}: ${team.name} +${formatPoints(score.total)}`;
         }).filter(Boolean);
         return { owner, points: teams.reduce((total, text) => total + Number(text.split("+").pop()), 0), teams };
       }).filter(item => item.teams.length).sort((a, b) => b.points - a.points);
