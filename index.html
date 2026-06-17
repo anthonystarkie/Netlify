@@ -1113,7 +1113,7 @@
           const team = owner.selections[tier.id];
           if (!team?.id || !fixtureIncludesTeam(fixtureItem, team.id)) return null;
           const score = scoreTeam(team, tier, [fixtureItem]);
-          return `${tier.label}: {team.flag ? `<img src="${team.flag}" style="width:16px;height:12px;">` : ""} ${team.name} +${formatPoints(score.total)}`;
+          return `${tier.label}: {team.flag ? `<img src="${item.team.flag}" class="flag">` : ""} ${team.name} +${formatPoints(score.total)}`;
         }).filter(Boolean);
         return { owner, points: teams.reduce((total, text) => total + Number(text.split("+").pop()), 0), teams };
       }).filter(item => item.teams.length).sort((a, b) => b.points - a.points);
@@ -1153,7 +1153,7 @@
             <td>
               ${item.team?.name ? `
                 <div class="pill" style="display:flex;align-items:center;gap:6px;">
-                  ${item.team.flag ? <img src="${item.team.flag}" style="width:16px;height:12px;object-fit:cover;">` : ""}
+                  ${item.team.flag ? `<img src="${item.team.flag}" class="flag">` : ""}
                   ${item.team.name}
                 </div>
               ` : `<span class="muted-row">Empty</span>`}
@@ -1265,7 +1265,7 @@
       document.getElementById("matchList").innerHTML = completed.map(item => `
         <div class="match-row">
           <div>
-            <img src="${team.flag}" style="width:16px;height:12px;"><strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
+            <img src="${item.team.flag}" class="flag"><strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
             <div class="muted-row">${formatStage(item.stage)}${item.utcDate ? " / " + new Date(item.utcDate).toLocaleString() : ""}</div>
           </div>
           <span class="pill">${displayStatus(item.status)}</span>
@@ -1289,8 +1289,8 @@
         ...state.availableTeams.map(team => {
           const disabled = unavailable.has(String(team.id)) ? "disabled" : "";
           const selected = current?.id && String(current.id) === String(team.id) ? "selected" : "";
-          const flag = team.flag ? `<img src="${team.flag}" style="width:16px;height:12px;margin-right:6px;vertical-align:middle;">` : "";
-          const label = unavailable.has(String(team.id)) ? `{team.flag ? `<img src="${team.flag}" style="width:16px;height:12px;">` : ""} ${team.name} - already picked` : team.name;
+          const flag = team.flag ? `<img src="${item.team.flag}" class="flag">` : "";
+          const label = unavailable.has(String(team.id)) ? `{team.flag ? `<img src="${item.team.flag}" class="flag">` : ""} ${team.name} - already picked` : team.name;
           return `<option value="${team.id}" ${disabled} ${selected}>${label}</option>`;
         })
       ].join("");
