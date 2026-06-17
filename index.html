@@ -300,6 +300,11 @@
       white-space: nowrap;
     }
 
+    .pill img {
+      border-radius: 2px;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+    }
+
     .tier-pill {
       justify-content: center;
       border-radius: 6px;
@@ -1099,7 +1104,7 @@
           const team = owner.selections[tier.id];
           if (!team?.id || !fixtureIncludesTeam(fixtureItem, team.id)) return null;
           const score = scoreTeam(team, tier, [fixtureItem]);
-          return `${tier.label}: ${team.name} +${formatPoints(score.total)}`;
+          return `${tier.label}: {team.flag ? `<img src="${team.flag}" style="width:16px;height:12px;">` : ""} ${team.name} +${formatPoints(score.total)}`;
         }).filter(Boolean);
         return { owner, points: teams.reduce((total, text) => total + Number(text.split("+").pop()), 0), teams };
       }).filter(item => item.teams.length).sort((a, b) => b.points - a.points);
@@ -1129,29 +1134,25 @@
 
     function renderStandings() {
       const rows = ownerRows();
-      document.getElementById("standingsBody").innerHTML = rows.map((owner, index) => `  
-      <tbody id="standingsBody">
-        ${rows.map((owner, index) => `
-          <tr>
-            <td><span class="rank">${index + 1}</span></td>
+      document.getElementById("standingsBody").innerHTML = rows.map((owner, index) => `
+        <tr>
+          <td><span class="rank">${index + 1}</span></td>
 
-            <td><span class="owner-name">${owner.name}</span></td>
+          <td><span class="owner-name">${owner.name}</span></td>
 
-            ${owner.contributions.map(item => `
-              <td>
-                ${item.team?.name ? `
-                  <div class="pill" style="display:flex;align-items:center;gap:4px;">
-                    ${item.team.flag ? `<img src="${item.team.flag}" style="width:16px;height:12px;">` : ""}
-                    ${item.team.name}
-                  </div>
-                ` : `<span class="muted-row">Empty</span>`}
-              </td>
-            `).join("")}
+          ${owner.contributions.map(item => `
+            <td>
+              ${item.team?.name ? `
+                <div class="pill" style="display:flex;align-items:center;gap:6px;">
+                  ${item.team.flag ? `<img src="${item.team.flag}" style="width:16px;height:12px;object-fit:cover;">` : ""}
+                  ${item.team.name}
+                </div>
+              ` : `<span class="muted-row">Empty</span>`}
+            </td>
+          `).join("")}
+          <td><span class="score">${formatPoints(owner.points)}</span></td>
+        </tr>
 
-            <td><span class="score">${formatPoints(owner.points)}</span></td>
-          </tr>
-        `).join("")}
-      </tbody>
       `).join("");
 
       const leader = rows[0];
@@ -1255,7 +1256,7 @@
       document.getElementById("matchList").innerHTML = completed.map(item => `
         <div class="match-row">
           <div>
-            <strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
+            <img src="${team.flag}" style="width:16px;height:12px;"><strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
             <div class="muted-row">${formatStage(item.stage)}${item.utcDate ? " / " + new Date(item.utcDate).toLocaleString() : ""}</div>
           </div>
           <span class="pill">${displayStatus(item.status)}</span>
@@ -1280,7 +1281,7 @@
           const disabled = unavailable.has(String(team.id)) ? "disabled" : "";
           const selected = current?.id && String(current.id) === String(team.id) ? "selected" : "";
           const flag = team.flag ? `<img src="${team.flag}" style="width:16px;height:12px;margin-right:6px;vertical-align:middle;">` : "";
-          const label = unavailable.has(String(team.id)) ? `${team.name} - already picked` : team.name;
+          const label = unavailable.has(String(team.id)) ? `{team.flag ? `<img src="${team.flag}" style="width:16px;height:12px;">` : ""} ${team.name} - already picked` : team.name;
           return `<option value="${team.id}" ${disabled} ${selected}>${label}</option>`;
         })
       ].join("");
@@ -1308,7 +1309,7 @@
         <div class="api-row"><strong>Completed results</strong><span class="score">${state.fixtures.filter(isComplete).length}</span></div>
       `;
 
-      document.getElementById("apiTeamList").innerHTML = state.availableTeams.map(team => `<span class="pill">${team.name}</span>`).join(" ") || `<div class="empty">Sync teams or load sample data.</div>`;
+      document.getElementById("apiTeamList").innerHTML = state.availableTeams.map(team => `<span class="pill">{team.flag ? `<img src="${team.flag}" style="width:16px;height:12px;">` : ""} ${team.name}</span>`).join(" ") || `<div class="empty">Sync teams or load sample data.</div>`;
     }
 
     function renderHistory() {
@@ -1444,41 +1445,45 @@
 
 
     
+    
     async function syncFixturesFromApi(options = {}) {
       updateApiStatus(options.automatic ? "Auto-syncing..." : "Syncing fixtures...");
 
-      console.log("API MATCHES:", data);
-
       try {
-        const data = await fetchApi("matches");
+        console.log("👉 Starting fixtures fetch");
+
+        const data = await fetchApi("matches");  // ✅ FIRST define it
+
+        console.log("✅ Match API returned:", data); // ✅ THEN use it
 
         state.fixtures = (data.matches || [])
           .filter(match => match.homeTeam?.id && match.awayTeam?.id)
           .map(match => ({
-          id: match.id,
-          stage: match.stage || match.group || "",
+            id: match.id,
+            stage: match.stage || match.group || "",
+            utcDate: match.utcDate || null,
+            status: match.status,
 
-          utcDate: match.utcDate || null,
-          status: match.status,
+            home: {
+              id: match.homeTeam.id,
+              name: match.homeTeam.name
+            },
+            away: {
+              id: match.awayTeam.id,
+              name: match.awayTeam.name
+            },
 
-          home: {
-            id: match.homeTeam.id,
-            name: match.homeTeam.name
-          },
-          away: {
-            id: match.awayTeam.id,
-            name: match.awayTeam.name
-          },
-
-          homeGoals: match.score?.fullTime?.home ?? null,
-          awayGoals: match.score?.fullTime?.away ?? null
-        }));
+            homeGoals: match.score?.fullTime?.home ?? null,
+            awayGoals: match.score?.fullTime?.away ?? null
+          }));
 
         state.api.lastSyncIso = new Date().toISOString();
+
         state.api.status =
-          `Synced ${state.fixtures.filter(isComplete).length} completed matches`;
+          `✅ Synced ${state.fixtures.length} matches (${state.fixtures.filter(isComplete).length} completed)`;
 
       } catch (err) {
+        console.error("❌ Match sync error:", err);
         state.api.status = err.message;
       }
 
@@ -1486,48 +1491,49 @@
       render();
     }
 
-    function scheduleAutoSync() {
-      if (autoSyncTimer) {
-        clearTimeout(autoSyncTimer);
-        autoSyncTimer = null;
-      }
 
-      if (state.api.autoSync === false || requestsRemainingToday() <= 0) {
-        state.api.nextAutoSync = "";
-        saveState();
-        return;
-      }
+        function scheduleAutoSync() {
+          if (autoSyncTimer) {
+            clearTimeout(autoSyncTimer);
+            autoSyncTimer = null;
+          }
 
-      const window = matchWindowForDate();
-      if (!window) {
-        state.api.nextAutoSync = "";
-        saveState();
-        return;
-      }
+          if (state.api.autoSync === false || requestsRemainingToday() <= 0) {
+            state.api.nextAutoSync = "";
+            saveState();
+            return;
+          }
 
-      const now = new Date();
-      if (now > window.end) {
-        state.api.nextAutoSync = "";
-        saveState();
-        return;
-      }
+          const window = matchWindowForDate();
+          if (!window) {
+            state.api.nextAutoSync = "";
+            saveState();
+            return;
+          }
 
-      const delay = now < window.start
-        ? window.start.getTime() - now.getTime()
-        : autoSyncIntervalMs(now);
+          const now = new Date();
+          if (now > window.end) {
+            state.api.nextAutoSync = "";
+            saveState();
+            return;
+          }
 
-      state.api.nextAutoSync = new Date(now.getTime() + delay).toISOString();
-      saveState();
+          const delay = now < window.start
+            ? window.start.getTime() - now.getTime()
+            : autoSyncIntervalMs(now);
 
-      autoSyncTimer = setTimeout(async () => {
-        if (state.api.autoSync !== false && isInsideMatchWindow() && requestsRemainingToday() > 0) {
-          await syncFixturesFromApi({ automatic: true });
-        } else {
-          scheduleAutoSync();
-          render();
+          state.api.nextAutoSync = new Date(now.getTime() + delay).toISOString();
+          saveState();
+
+          autoSyncTimer = setTimeout(async () => {
+            if (state.api.autoSync !== false && isInsideMatchWindow() && requestsRemainingToday() > 0) {
+              await syncFixturesFromApi({ automatic: true });
+            } else {
+              scheduleAutoSync();
+              render();
+            }
+          }, delay);
         }
-      }, delay);
-    }
 
     document.querySelectorAll(".tab-button").forEach(button => {
       button.addEventListener("click", () => {
