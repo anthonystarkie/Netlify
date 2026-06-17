@@ -1,4 +1,3 @@
-//const DEFAULT_BASE_URL = "https://api.football-data.org/v4";
 const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
 
 
@@ -103,20 +102,6 @@ exports.handler = async function handler(event) {
       });
   }
 
-
-const url = `${FOOTBALL_DATA_BASE_URL}${endpoint}`;
-
-// ✅ ADD THIS DEBUG BLOCK
-return json(200, {
-  debug: {
-    apiKeyExists: !!apiKey,
-    baseUrl: FOOTBALL_DATA_BASE_URL,
-    endpoint,
-    finalUrl: url
-  }
-});
-
-
   let baseUrl;
 
   try {
@@ -125,14 +110,15 @@ return json(200, {
     return json(500, { error: error.message });
   }
 
-  const url = new URL(endpoint, `${baseUrl}/`);
+  //const url = new URL(endpoint, `${baseUrl}/`);
+  const url = `${baseUrl}${endpoint}`;
 
   if (season && kind !== "competition") {
     url.searchParams.set("season", season);
   }
 
   try {
-    const response = await fetch(url.toString(), {
+    const response = await fetch(url, {
       headers: {
         "X-Auth-Token": apiKey,
         Accept: "application/json"
