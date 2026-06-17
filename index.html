@@ -597,7 +597,7 @@
 
           <div class="panel span-4">
             <div class="panel-header">
-              <h3>Team Contribution (1st: ${leader ? leader.name : ""})</h3>
+              <h3 id="teamContributionTitle">Team Contribution</h3>
             </div>
             <div class="panel-body">
               <div class="bar-list" id="projectionBars"></div>
@@ -1164,9 +1164,9 @@
               ${item.team?.name ? `
                 <div class="pill" style="display:flex;align-items:center;gap:6px;">                 
                 ${item.team.flag 
-                          ? `<img src="${item.team.flag}" class="team-flag">`
-                          : ""
-                        }
+                  ? `<img src="${item.team.flag}" class="team-flag">`
+                  : ""
+                }
                 ${item.team.name}
                 </div>
               ` : `<span class="muted-row">Empty</span>`}
@@ -1178,6 +1178,15 @@
       `).join("");
 
       const leader = rows[0];
+
+      const titleEl = document.getElementById("teamContributionTitle");
+
+      if (titleEl) {
+        titleEl.textContent = leader
+          ? `Team Contribution (1st: ${leader.name})`
+          : "Team Contribution";
+      }
+
       if (!leader) {
         document.getElementById("projectionBars").innerHTML = `<div class="empty">Add players to begin.</div>`;
         return;
@@ -1196,6 +1205,8 @@
         if (contributionTitle && leader) {
           contributionTitle.textContent = `Team Contribution (${leader.name})`;
         }
+
+        console.log("TEAM:", item.team);
     }
 
     function renderOwners() {
