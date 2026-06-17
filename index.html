@@ -897,12 +897,7 @@
     let autoSyncTimer = null;    
     let state = structuredClone(defaultState);
 
-    loadStateFromServer().then(serverState => {
-      state = serverState;
-      render();
-    });
-
-    async function loadStateFromServer() {
+   /*async function loadStateFromServer() {
         const res = await fetch("/.netlify/functions/state");
         const data = await res.json();
 
@@ -910,6 +905,19 @@
           ? data
           : structuredClone(defaultState);
       }
+          */
+    
+    loadStateFromServer().then(serverState => {
+      state = serverState;
+      render();
+
+      setInterval(async () => {
+        const latest = await loadStateFromServer();
+        state = latest;
+        render();
+      }, 15000);
+
+    });
 
     function loadState() {
       //const saved = localStorage.getItem(storageKey);
@@ -949,11 +957,19 @@
       localStorage.setItem(storageKey, JSON.stringify(state));
     }*/
 
+    let ADMIN_TOKEN = "";
+
     async function saveState() {
+      
+      if (!ADMIN_TOKEN) {
+        ADMIN_TOKEN = prompt("Enter admin password:");
+        }
+
       await fetch("/.netlify/functions/state", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "x-admin-token": ADMIN_TOKEN // ✅ must match your env var
         },
         body: JSON.stringify(state)
       });
