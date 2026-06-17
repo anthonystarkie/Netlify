@@ -1,0 +1,1531 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Family World Cup Fantasy League</title>
+  <style>
+    :root {
+      --ink: #18202a;
+      --muted: #5b6674;
+      --line: #d8dee7;
+      --paper: #fbfcfe;
+      --panel: #ffffff;
+      --green: #16784a;
+      --teal: #0f6f78;
+      --coral: #c84f3a;
+      --gold: #b57a13;
+      --blue: #2462a8;
+      --shadow: 0 16px 40px rgba(24, 32, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(22, 120, 74, 0.08), transparent 35%),
+        linear-gradient(315deg, rgba(200, 79, 58, 0.09), transparent 35%),
+        var(--paper);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--ink);
+      cursor: pointer;
+      padding: 0 12px;
+    }
+
+    button:hover {
+      border-color: var(--teal);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.52;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+    }
+
+    aside {
+      border-right: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(10px);
+      padding: 24px 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .crest {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: white;
+      background: linear-gradient(135deg, var(--green), var(--teal) 55%, var(--coral));
+      font-weight: 800;
+    }
+
+    h1 {
+      font-size: 1.06rem;
+      line-height: 1.1;
+      margin: 0;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin: 4px 0 0;
+    }
+
+    .nav-tabs {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .tab-button {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      text-align: left;
+      color: var(--muted);
+    }
+
+    .tab-button[aria-selected="true"] {
+      color: var(--ink);
+      border-color: rgba(15, 111, 120, 0.35);
+      background: rgba(15, 111, 120, 0.08);
+      font-weight: 700;
+    }
+
+    .metric-stack {
+      display: grid;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 12px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 1.25rem;
+    }
+
+    main {
+      padding: 28px;
+      min-width: 0;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .topbar h2 {
+      margin: 0;
+      font-size: clamp(1.45rem, 3vw, 2.15rem);
+      letter-spacing: 0;
+    }
+
+    .actions,
+    .form-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .form-actions {
+      margin-top: 14px;
+    }
+
+    .primary {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: white;
+    }
+
+    .danger {
+      color: #9f2f24;
+      border-color: rgba(200, 79, 58, 0.35);
+    }
+
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-header h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .panel-body {
+      padding: 16px 18px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .rank {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(181, 122, 19, 0.14);
+      color: var(--gold);
+      font-weight: 800;
+    }
+
+    .owner-name {
+      font-weight: 800;
+    }
+
+    .team-list,
+    .tier-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tier-list {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 4px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    .tier-pill {
+      justify-content: center;
+      border-radius: 6px;
+      min-height: 34px;
+      white-space: normal;
+      text-align: center;
+    }
+
+    .score {
+      font-size: 1.5rem;
+      font-weight: 850;
+      color: var(--teal);
+      white-space: nowrap;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: white;
+      color: var(--ink);
+      padding: 8px 10px;
+    }
+
+    .wide {
+      grid-column: 1 / -1;
+    }
+
+    .rule-row,
+    .owner-row,
+    .match-row,
+    .api-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .rule-row:last-child,
+    .owner-row:last-child,
+    .match-row:last-child,
+    .api-row:last-child {
+      border-bottom: 0;
+    }
+
+    .small-input {
+      max-width: 88px;
+      text-align: right;
+    }
+
+    .impact-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .impact-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+    }
+
+    .muted-row {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-top: 3px;
+    }
+
+    .bar-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+    }
+
+    .track {
+      height: 10px;
+      border-radius: 999px;
+      background: #edf1f5;
+      overflow: hidden;
+    }
+
+    .fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), var(--teal));
+      min-width: 2px;
+    }
+
+    .chart {
+      width: 100%;
+      min-height: 260px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+    }
+
+    .empty,
+    .notice {
+      color: var(--muted);
+      padding: 18px;
+      text-align: center;
+    }
+
+    .notice {
+      text-align: left;
+      border: 1px solid rgba(36, 98, 168, 0.24);
+      border-radius: 8px;
+      background: rgba(36, 98, 168, 0.07);
+    }
+
+    @media (max-width: 1100px) {
+      .tier-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 900px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .nav-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      main {
+        padding: 18px;
+      }
+
+      .span-4,
+      .span-5,
+      .span-6,
+      .span-7,
+      .span-8 {
+        grid-column: span 12;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .nav-tabs,
+      .form-grid,
+      .tier-list {
+        grid-template-columns: 1fr;
+      }
+
+      th:nth-child(3),
+      td:nth-child(3) {
+        display: none;
+      }
+
+      .panel-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside>
+      <div class="brand">
+        <div class="crest">FWC</div>
+        <div>
+          <h1>Family World Cup Fantasy League</h1>
+          <p class="subtle">Live API scoring page</p>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="Views">
+        <button class="tab-button" aria-selected="true" data-tab="standings">Table</button>
+        <button class="tab-button" aria-selected="false" data-tab="teams">Teams</button>
+        <button class="tab-button" aria-selected="false" data-tab="matches">Results</button>
+        <button class="tab-button" aria-selected="false" data-tab="api">API</button>
+        <button class="tab-button" aria-selected="false" data-tab="rules">Rules</button>
+      </nav>
+
+      <div class="metric-stack">
+        <div class="metric">
+          <strong id="metricLeader">-</strong>
+          <span class="subtle">Current leader</span>
+        </div>
+        <div class="metric">
+          <strong id="metricMatches">0</strong>
+          <span class="subtle">Completed fixtures</span>
+        </div>
+        <div class="metric">
+          <strong id="metricTeams">0</strong>
+          <span class="subtle">Teams selected</span>
+        </div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="topbar">
+        <div>
+          <h2 id="pageTitle">League Table</h2>
+          <p class="subtle">Netlify Functions fetch fixtures; every player gets one team in each weighted category.</p>
+        </div>
+        <div class="actions">
+          <button id="syncFixtures">Sync results</button>
+          <button id="resetDemo">Reset demo</button>
+          <button class="primary" id="exportData">Export data</button>
+        </div>
+      </div>
+
+      <section class="section active" id="standings">
+        <div class="grid">
+          <div class="panel span-8">
+            <div class="panel-header">
+              <h3>Live Standings</h3>
+              <span class="pill" id="lastUpdated">Ready</span>
+            </div>
+            <div class="panel-body" style="padding:0">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Family member</th>
+                    <th>Teams</th>
+                    <th>Points</th>
+                  </tr>
+                </thead>
+                <tbody id="standingsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel span-4">
+            <div class="panel-header">
+              <h3>Team Contribution</h3>
+            </div>
+            <div class="panel-body">
+              <div class="bar-list" id="projectionBars"></div>
+            </div>
+          </div>
+
+          <div class="panel span-12">
+            <div class="panel-header">
+              <h3>Position History</h3>
+              <span class="subtle">After each completed fixture</span>
+            </div>
+            <div class="panel-body">
+              <svg class="chart" id="historyChart" role="img" aria-label="League position history"></svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="teams">
+        <div class="grid">
+          <div class="panel span-5">
+            <div class="panel-header">
+              <h3>Add Family Member</h3>
+            </div>
+            <div class="panel-body">
+              <form id="ownerForm">
+                <div class="form-grid">
+                  <label class="wide">Name
+                    <input id="ownerName" autocomplete="off" placeholder="e.g. Anthony">
+                  </label>
+                </div>
+                <div class="form-actions">
+                  <button class="primary" type="submit">Add member</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="panel span-7">
+            <div class="panel-header">
+              <h3>Assign API Team</h3>
+              <span class="pill" id="duplicateStatus">No duplicates</span>
+            </div>
+            <div class="panel-body">
+              <form id="teamForm">
+                <div class="form-grid">
+                  <label>Family member
+                    <select id="teamOwner"></select>
+                  </label>
+                  <label>Category
+                    <select id="teamTier"></select>
+                  </label>
+                  <label class="wide">API-linked team
+                    <select id="teamSelect"></select>
+                  </label>
+                </div>
+                <div class="form-actions">
+                  <button class="primary" type="submit">Save team</button>
+                  <button type="button" id="syncTeams">Sync teams</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="panel span-12">
+            <div class="panel-header">
+              <h3>Current Allocations</h3>
+            </div>
+            <div class="panel-body" id="ownerList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="matches">
+        <div class="grid">
+          <div class="panel span-5">
+            <div class="panel-header">
+              <h3>Result Feed</h3>
+              <span class="pill" id="apiStatus">Sample data</span>
+            </div>
+            <div class="panel-body">
+              <div class="notice">
+                Auto-sync only runs during today's match window, from the earliest kickoff until two hours after the latest expected match end. Manual syncs also count toward the daily API budget.
+              </div>
+              <div class="form-actions">
+                <button class="primary" id="syncFixturesPanel" type="button">Sync results</button>
+                <button id="loadSampleFixtures" type="button">Load sample fixtures</button>
+                <button class="danger" id="clearFixtures" type="button">Clear results</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel span-7">
+            <div class="panel-header">
+              <h3>Latest Impact</h3>
+            </div>
+            <div class="panel-body">
+              <div class="impact-list" id="impactList"></div>
+            </div>
+          </div>
+
+          <div class="panel span-12">
+            <div class="panel-header">
+              <h3>Completed Fixtures</h3>
+            </div>
+            <div class="panel-body" id="matchList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="api">
+        <div class="grid">
+          <div class="panel span-7">
+            <div class="panel-header">
+              <h3>API-Football Settings</h3>
+            </div>
+            <div class="panel-body">
+              <form id="apiForm">
+                <div class="form-grid">
+                  <label>League ID
+                    <input id="apiLeague" inputmode="numeric" placeholder="1">
+                  </label>
+                  <label>Season
+                    <input id="apiSeason" inputmode="numeric" placeholder="2026">
+                  </label>
+                </div>
+                <p class="subtle">Your API key is read from the Netlify environment variable <strong>API_FOOTBALL_KEY</strong>, so family members never need to enter it.</p>
+                <label style="margin-top:14px">
+                  <span><input id="autoSyncEnabled" type="checkbox" style="width:auto; min-height:auto; margin-right:8px">Auto-sync results during live match windows</span>
+                </label>
+                <div class="form-actions">
+                  <button class="primary" type="submit">Save settings</button>
+                  <button id="testApi" type="button">Test connection</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="panel span-5">
+            <div class="panel-header">
+              <h3>Sync Summary</h3>
+            </div>
+            <div class="panel-body" id="apiSummary"></div>
+          </div>
+
+          <div class="panel span-12">
+            <div class="panel-header">
+              <h3>Available API Teams</h3>
+            </div>
+            <div class="panel-body" id="apiTeamList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="rules">
+        <div class="grid">
+          <div class="panel span-6">
+            <div class="panel-header">
+              <h3>Match Points</h3>
+            </div>
+            <div class="panel-body" id="matchRulesList"></div>
+          </div>
+
+          <div class="panel span-6">
+            <div class="panel-header">
+              <h3>Progression Bonuses</h3>
+            </div>
+            <div class="panel-body" id="bonusRulesList"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const tiers = [
+      { id: "elite", label: "Elite", win: 1, draw: 0.5 },
+      { id: "challenger", label: "Challenger", win: 2, draw: 1 },
+      { id: "midTier", label: "Mid-Tier", win: 3, draw: 1.5 },
+      { id: "longshot", label: "Longshot", win: 4, draw: 2 },
+      { id: "underdog", label: "Underdog", win: 5, draw: 2.5 }
+    ];
+
+    const bonusRules = [
+      { id: "round32", label: "Qualify for Round of 32", points: 2 },
+      { id: "round16", label: "Qualify for Round of 16", points: 3 },
+      { id: "quarterWin", label: "Win Quarter-Final", points: 5 },
+      { id: "semiWin", label: "Win Semi-Final", points: 8 },
+      { id: "champion", label: "World Cup Champion", points: 15 },
+      { id: "runnerUp", label: "Runner up", points: 10 }
+    ];
+
+    const sampleTeams = [
+      { id: 10, name: "England" },
+      { id: 6, name: "Brazil" },
+      { id: 26, name: "Argentina" },
+      { id: 2, name: "France" },
+      { id: 25, name: "Germany" },
+      { id: 31, name: "Japan" },
+      { id: 20, name: "Morocco" },
+      { id: 2384, name: "Scotland" },
+      { id: 2382, name: "USA" },
+      { id: 9, name: "Spain" },
+      { id: 27, name: "Portugal" },
+      { id: 21, name: "Netherlands" },
+      { id: 15, name: "Mexico" },
+      { id: 7, name: "Uruguay" },
+      { id: 17, name: "Senegal" }
+    ];
+
+    const sampleFixtures = [
+      fixture(1001, "Group Stage", "England", 10, "USA", 2382, 2, 1),
+      fixture(1002, "Group Stage", "Brazil", 6, "Morocco", 20, 0, 0),
+      fixture(1003, "Group Stage", "France", 2, "Scotland", 2384, 1, 1),
+      fixture(1004, "Round of 32", "Argentina", 26, "Japan", 31, 2, 0),
+      fixture(1005, "Round of 16", "Germany", 25, "Morocco", 20, 1, 2),
+      fixture(1006, "Quarter-finals", "Brazil", 6, "France", 2, 3, 1),
+      fixture(1007, "Semi-finals", "England", 10, "Brazil", 6, 2, 1),
+      fixture(1008, "Final", "England", 10, "Argentina", 26, 1, 0)
+    ];
+
+    function fixture(id, stage, homeName, homeId, awayName, awayId, homeGoals, awayGoals) {
+      return {
+        id,
+        stage,
+        utcDate: null,
+        status: "FT",
+        home: { id: homeId, name: homeName },
+        away: { id: awayId, name: awayName },
+        homeGoals,
+        awayGoals
+      };
+    }
+
+    const defaultSelections = {
+      elite: { id: 10, name: "England" },
+      challenger: { id: 31, name: "Japan" },
+      midTier: { id: 6, name: "Brazil" },
+      longshot: { id: 2384, name: "Scotland" },
+      underdog: { id: null, name: "" }
+    };
+
+    const defaultState = {
+      api: {
+        league: "1",
+        season: "2026",
+        autoSync: true,
+        lastSync: "",
+        lastSyncIso: "",
+        nextAutoSync: "",
+        requestLog: { date: "", count: 0 },
+        status: "Sample data loaded"
+      },
+      owners: [
+        {
+          id: "anthony",
+          name: "Anthony",
+          color: "#0f6f78",
+          selections: structuredClone(defaultSelections)
+        },
+        {
+          id: "sarah",
+          name: "Sarah",
+          color: "#c84f3a",
+          selections: {
+            elite: { id: 26, name: "Argentina" },
+            challenger: { id: 25, name: "Germany" },
+            midTier: { id: 20, name: "Morocco" },
+            longshot: { id: 2382, name: "USA" },
+            underdog: { id: 15, name: "Mexico" }
+          }
+        },
+        {
+          id: "ben",
+          name: "Ben",
+          color: "#16784a",
+          selections: {
+            elite: { id: 2, name: "France" },
+            challenger: { id: 9, name: "Spain" },
+            midTier: { id: 27, name: "Portugal" },
+            longshot: { id: 21, name: "Netherlands" },
+            underdog: { id: 7, name: "Uruguay" }
+          }
+        }
+      ],
+      availableTeams: structuredClone(sampleTeams),
+      fixtures: structuredClone(sampleFixtures)
+    };
+
+    const storageKey = "familyWorldCupFantasyApiPrototype";
+    const colors = ["#0f6f78", "#c84f3a", "#16784a", "#b57a13", "#2462a8", "#7a4e9f"];
+    const completedStatuses = new Set(["FT", "AET", "PEN"]);
+    const apiDailyLimit = 100;
+    const expectedMatchDurationMs = 2 * 60 * 60 * 1000;
+    const postGameBufferMs = 2 * 60 * 60 * 1000;
+    const minimumAutoSyncMs = 5 * 60 * 1000;
+    let autoSyncTimer = null;
+    let state = loadState();
+
+    function loadState() {
+      const saved = localStorage.getItem(storageKey);
+      if (!saved) return structuredClone(defaultState);
+      try {
+        return migrateState(JSON.parse(saved));
+      } catch {
+        return structuredClone(defaultState);
+      }
+    }
+
+    function migrateState(saved) {
+      if (!saved.owners || !saved.fixtures) return structuredClone(defaultState);
+      saved.api = { ...defaultState.api, ...(saved.api || {}) };
+      saved.availableTeams = saved.availableTeams?.length ? saved.availableTeams : structuredClone(sampleTeams);
+      saved.owners = saved.owners.map((owner, index) => ({
+        ...owner,
+        color: owner.color || colors[index % colors.length],
+        selections: {
+          elite: blankTeam(),
+          challenger: blankTeam(),
+          midTier: blankTeam(),
+          longshot: blankTeam(),
+          underdog: blankTeam(),
+          ...(owner.selections || {})
+        }
+      }));
+      return saved;
+    }
+
+    function saveState() {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function todayKey(date = new Date()) {
+      return date.toLocaleDateString("en-CA");
+    }
+
+    function ensureRequestLog() {
+      if (!state.api.requestLog || state.api.requestLog.date !== todayKey()) {
+        state.api.requestLog = { date: todayKey(), count: 0 };
+      }
+    }
+
+    function requestsUsedToday() {
+      ensureRequestLog();
+      return state.api.requestLog.count;
+    }
+
+    function requestsRemainingToday() {
+      return Math.max(0, apiDailyLimit - requestsUsedToday());
+    }
+
+    function recordApiRequest() {
+      ensureRequestLog();
+      if (state.api.requestLog.count >= apiDailyLimit) {
+        throw new Error("Daily API request limit reached. Auto-sync will resume tomorrow.");
+      }
+      state.api.requestLog.count += 1;
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "Never";
+      const date = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(date.getTime())) return "Never";
+      return date.toLocaleString([], {
+        dateStyle: "medium",
+        timeStyle: "short"
+      });
+    }
+
+    function fixturesForDate(date = new Date()) {
+      const key = todayKey(date);
+      return state.fixtures.filter(item => item.utcDate && todayKey(new Date(item.utcDate)) === key);
+    }
+
+    function matchWindowForDate(date = new Date()) {
+      const dayFixtures = fixturesForDate(date);
+      if (!dayFixtures.length) return null;
+      const starts = dayFixtures.map(item => new Date(item.utcDate).getTime()).filter(Number.isFinite);
+      if (!starts.length) return null;
+      const start = new Date(Math.min(...starts));
+      const end = new Date(Math.max(...starts) + expectedMatchDurationMs + postGameBufferMs);
+      return { start, end, fixtures: dayFixtures.length };
+    }
+
+    function describeMatchWindow() {
+      const window = matchWindowForDate();
+      if (!window) return "No dated fixtures today";
+      return `${formatDateTime(window.start)} to ${formatDateTime(window.end)}`;
+    }
+
+    function isInsideMatchWindow(now = new Date()) {
+      const window = matchWindowForDate(now);
+      return Boolean(window && now >= window.start && now <= window.end);
+    }
+
+    function autoSyncIntervalMs(now = new Date()) {
+      const window = matchWindowForDate(now);
+      if (!window) return null;
+      const remainingBudget = Math.max(1, requestsRemainingToday());
+      const windowDuration = Math.max(1, window.end.getTime() - window.start.getTime());
+      return Math.max(minimumAutoSyncMs, Math.ceil(windowDuration / remainingBudget));
+    }
+
+    function blankTeam() {
+      return { id: null, name: "" };
+    }
+
+    function slugify(value) {
+      return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    }
+
+    function formatPoints(points) {
+      return Number.isInteger(points) ? String(points) : points.toFixed(1);
+    }
+
+    function selectedTeamKeys(exceptOwnerId = "", exceptTier = "") {
+      const keys = new Set();
+      state.owners.forEach(owner => {
+        tiers.forEach(tier => {
+          const team = owner.selections[tier.id];
+          if (!team?.id) return;
+          if (owner.id === exceptOwnerId && tier.id === exceptTier) return;
+          keys.add(String(team.id));
+        });
+      });
+      return keys;
+    }
+
+    function normalizeStage(stage) {
+      const text = String(stage || "").toLowerCase();
+      if (text.includes("round of 32") || text.includes("1/16")) return "round32";
+      if (text.includes("round of 16") || text.includes("1/8")) return "round16";
+      if (text.includes("quarter")) return "quarter";
+      if (text.includes("semi")) return "semi";
+      if (text.includes("final")) return "final";
+      return "group";
+    }
+
+    function isComplete(fixtureItem) {
+      return completedStatuses.has(fixtureItem.status) && fixtureItem.homeGoals !== null && fixtureItem.awayGoals !== null;
+    }
+
+    function fixtureIncludesTeam(fixtureItem, teamId) {
+      return String(fixtureItem.home.id) === String(teamId) || String(fixtureItem.away.id) === String(teamId);
+    }
+
+    function teamResult(fixtureItem, teamId) {
+      const isHome = String(fixtureItem.home.id) === String(teamId);
+      if (!isHome && String(fixtureItem.away.id) !== String(teamId)) return null;
+      const goalsFor = isHome ? fixtureItem.homeGoals : fixtureItem.awayGoals;
+      const goalsAgainst = isHome ? fixtureItem.awayGoals : fixtureItem.homeGoals;
+      if (goalsFor > goalsAgainst) return "win";
+      if (goalsFor === goalsAgainst) return "draw";
+      return "loss";
+    }
+
+    function scoreTeam(team, tier, fixtures = state.fixtures) {
+      if (!team?.id) return { total: 0, match: 0, bonus: 0, details: [] };
+      const relevant = fixtures.filter(item => isComplete(item) && fixtureIncludesTeam(item, team.id));
+      let match = 0;
+      let bonus = 0;
+      const flags = { round32: false, round16: false, quarterWin: false, semiWin: false, champion: false, runnerUp: false };
+
+      relevant.forEach(item => {
+        const result = teamResult(item, team.id);
+        if (result === "win") match += tier.win;
+        if (result === "draw") match += tier.draw;
+
+        const stage = normalizeStage(item.stage);
+        if (["round32", "round16", "quarter", "semi", "final"].includes(stage)) flags.round32 = true;
+        if (["round16", "quarter", "semi", "final"].includes(stage)) flags.round16 = true;
+        if (stage === "quarter" && result === "win") flags.quarterWin = true;
+        if (stage === "semi" && result === "win") flags.semiWin = true;
+        if (stage === "final" && result === "win") flags.champion = true;
+        if (stage === "final" && result === "loss") flags.runnerUp = true;
+      });
+
+      bonusRules.forEach(rule => {
+        if (flags[rule.id]) bonus += rule.points;
+      });
+
+      return { total: match + bonus, match, bonus, details: relevant };
+    }
+
+    function ownerRows(fixtures = state.fixtures) {
+      return state.owners.map(owner => {
+        const contributions = tiers.map(tier => {
+          const team = owner.selections[tier.id] || blankTeam();
+          const score = scoreTeam(team, tier, fixtures);
+          return { tier, team, ...score };
+        });
+        const points = contributions.reduce((total, item) => total + item.total, 0);
+        return { ...owner, contributions, points };
+      }).sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
+    }
+
+    function matchImpact(fixtureItem) {
+      return state.owners.map(owner => {
+        const teams = tiers.map(tier => {
+          const team = owner.selections[tier.id];
+          if (!team?.id || !fixtureIncludesTeam(fixtureItem, team.id)) return null;
+          const score = scoreTeam(team, tier, [fixtureItem]);
+          return `${tier.label}: ${team.name} +${formatPoints(score.total)}`;
+        }).filter(Boolean);
+        return { owner, points: teams.reduce((total, text) => total + Number(text.split("+").pop()), 0), teams };
+      }).filter(item => item.teams.length).sort((a, b) => b.points - a.points);
+    }
+
+    function render() {
+      renderMetrics();
+      renderStandings();
+      renderOwners();
+      renderRules();
+      renderMatches();
+      renderSelects();
+      renderApi();
+      renderHistory();
+      saveState();
+    }
+
+    function renderMetrics() {
+      const rows = ownerRows();
+      const selectedCount = state.owners.reduce((total, owner) => total + tiers.filter(tier => owner.selections[tier.id]?.id).length, 0);
+      document.getElementById("metricLeader").textContent = rows[0] ? rows[0].name : "-";
+      document.getElementById("metricMatches").textContent = state.fixtures.filter(isComplete).length;
+      document.getElementById("metricTeams").textContent = selectedCount;
+      document.getElementById("lastUpdated").textContent = `Last synced: ${formatDateTime(state.api.lastSyncIso)}`;
+      document.getElementById("apiStatus").textContent = state.api.status || "Ready";
+    }
+
+    function renderStandings() {
+      const rows = ownerRows();
+      document.getElementById("standingsBody").innerHTML = rows.map((owner, index) => `
+        <tr>
+          <td><span class="rank">${index + 1}</span></td>
+          <td><span class="owner-name">${owner.name}</span></td>
+          <td><span class="tier-list">${owner.contributions.map(item => `
+            <span class="pill tier-pill"><strong>${item.tier.label}</strong>: ${item.team.name || "Empty"}</span>
+          `).join("")}</span></td>
+          <td><span class="score">${formatPoints(owner.points)}</span></td>
+        </tr>
+      `).join("");
+
+      const leader = rows[0];
+      if (!leader) {
+        document.getElementById("projectionBars").innerHTML = `<div class="empty">Add players to begin.</div>`;
+        return;
+      }
+      const maxContribution = Math.max(...leader.contributions.map(item => item.total), 1);
+      document.getElementById("projectionBars").innerHTML = leader.contributions.map(item => `
+        <div>
+          <div class="bar-label"><strong>${item.tier.label}</strong><span>${formatPoints(item.total)} pts</span></div>
+          <div class="muted-row">${item.team.name || "No team selected"}: ${formatPoints(item.match)} match, ${formatPoints(item.bonus)} bonus</div>
+          <div class="track"><div class="fill" style="width:${Math.max(4, item.total / maxContribution * 100)}%; background:${leader.color}"></div></div>
+        </div>
+      `).join("");
+    }
+
+    function renderOwners() {
+      document.getElementById("ownerList").innerHTML = state.owners.map(owner => `
+        <div class="owner-row">
+          <div>
+            <strong>${owner.name}</strong>
+            <div class="tier-list" style="margin-top:8px">${tiers.map(tier => {
+              const team = owner.selections[tier.id] || blankTeam();
+              return `<span class="pill tier-pill"><strong>${tier.label}</strong>: ${team.name || "Empty"}</span>`;
+            }).join("")}</div>
+          </div>
+          <button class="danger" data-remove-owner="${owner.id}" type="button">Remove</button>
+        </div>
+      `).join("") || `<div class="empty">Add a family member to begin.</div>`;
+
+      const duplicates = duplicateSelections();
+      document.getElementById("duplicateStatus").textContent = duplicates.length ? `${duplicates.length} duplicate${duplicates.length === 1 ? "" : "s"}` : "No duplicates";
+    }
+
+    function duplicateSelections() {
+      const seen = new Map();
+      const duplicates = [];
+      state.owners.forEach(owner => {
+        tiers.forEach(tier => {
+          const team = owner.selections[tier.id];
+          if (!team?.id) return;
+          const key = String(team.id);
+          if (seen.has(key)) duplicates.push(team.name);
+          seen.set(key, team.name);
+        });
+      });
+      return duplicates;
+    }
+
+    function renderRules() {
+      document.getElementById("matchRulesList").innerHTML = tiers.map(tier => `
+        <div class="rule-row">
+          <strong>${tier.label}</strong>
+          <span class="pill">Win ${tier.win}, Draw ${tier.draw}, Loss 0</span>
+        </div>
+      `).join("");
+
+      document.getElementById("bonusRulesList").innerHTML = bonusRules.map(rule => `
+        <div class="rule-row">
+          <strong>${rule.label}</strong>
+          <span class="score">${formatPoints(rule.points)}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderMatches() {
+      const completed = state.fixtures.filter(isComplete);
+      const latest = completed[completed.length - 1];
+      const impactList = document.getElementById("impactList");
+      if (!latest) {
+        impactList.innerHTML = `<div class="empty">Sync or load results to see who gained points.</div>`;
+      } else {
+        const impacts = matchImpact(latest);
+        impactList.innerHTML = `
+          <div class="impact-item">
+            <div>
+              <strong>${latest.home.name} ${latest.homeGoals}-${latest.awayGoals} ${latest.away.name}</strong>
+              <div class="muted-row">${latest.stage}</div>
+            </div>
+            <span class="pill">Latest</span>
+          </div>
+          ${impacts.map(item => `
+            <div class="impact-item">
+              <div>
+                <strong>${item.owner.name}</strong>
+                <div class="muted-row">${item.teams.join(", ")}</div>
+              </div>
+              <span class="score">+${formatPoints(item.points)}</span>
+            </div>
+          `).join("") || `<div class="empty">No selected teams in this fixture.</div>`}
+        `;
+      }
+
+      document.getElementById("matchList").innerHTML = completed.map(item => `
+        <div class="match-row">
+          <div>
+            <strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
+            <div class="muted-row">${item.stage} ${item.utcDate ? " / " + new Date(item.utcDate).toLocaleString() : ""}</div>
+          </div>
+          <span class="pill">${item.status}</span>
+        </div>
+      `).join("") || `<div class="empty">No completed fixtures yet.</div>`;
+    }
+
+    function renderSelects() {
+      document.getElementById("teamOwner").innerHTML = state.owners.map(owner => `<option value="${owner.id}">${owner.name}</option>`).join("");
+      document.getElementById("teamTier").innerHTML = tiers.map(tier => `<option value="${tier.id}">${tier.label}</option>`).join("");
+      renderTeamOptions();
+    }
+
+    function renderTeamOptions() {
+      const ownerId = document.getElementById("teamOwner").value;
+      const tierId = document.getElementById("teamTier").value;
+      const unavailable = selectedTeamKeys(ownerId, tierId);
+      const current = state.owners.find(owner => owner.id === ownerId)?.selections[tierId];
+      document.getElementById("teamSelect").innerHTML = [
+        `<option value="">Empty</option>`,
+        ...state.availableTeams.map(team => {
+          const disabled = unavailable.has(String(team.id)) ? "disabled" : "";
+          const selected = current?.id && String(current.id) === String(team.id) ? "selected" : "";
+          const label = unavailable.has(String(team.id)) ? `${team.name} - already picked` : team.name;
+          return `<option value="${team.id}" ${disabled} ${selected}>${label}</option>`;
+        })
+      ].join("");
+    }
+
+    function renderApi() {
+      document.getElementById("apiLeague").value = state.api.league || "1";
+      document.getElementById("apiSeason").value = state.api.season || "2026";
+      document.getElementById("autoSyncEnabled").checked = state.api.autoSync !== false;
+      const remaining = requestsRemainingToday();
+      const interval = autoSyncIntervalMs();
+
+      document.getElementById("apiSummary").innerHTML = `
+        <div class="api-row"><strong>Status</strong><span class="pill">${state.api.status || "Ready"}</span></div>
+        <div class="api-row"><strong>API key</strong><span class="pill">Stored in Netlify</span></div>
+        <div class="api-row"><strong>Last synced</strong><span class="pill">${formatDateTime(state.api.lastSyncIso)}</span></div>
+        <div class="api-row"><strong>Requests today</strong><span class="score">${requestsUsedToday()}/${apiDailyLimit}</span></div>
+        <div class="api-row"><strong>Requests remaining</strong><span class="score">${remaining}</span></div>
+        <div class="api-row"><strong>Match window</strong><span class="pill">${describeMatchWindow()}</span></div>
+        <div class="api-row"><strong>Auto-sync interval</strong><span class="pill">${interval ? `${Math.ceil(interval / 60000)} min` : "Waiting for dated fixtures"}</span></div>
+        <div class="api-row"><strong>Next auto-sync</strong><span class="pill">${formatDateTime(state.api.nextAutoSync)}</span></div>
+        <div class="api-row"><strong>Teams loaded</strong><span class="score">${state.availableTeams.length}</span></div>
+        <div class="api-row"><strong>Fixtures loaded</strong><span class="score">${state.fixtures.length}</span></div>
+        <div class="api-row"><strong>Completed results</strong><span class="score">${state.fixtures.filter(isComplete).length}</span></div>
+      `;
+
+      document.getElementById("apiTeamList").innerHTML = state.availableTeams.map(team => `<span class="pill">${team.name}</span>`).join(" ") || `<div class="empty">Sync teams or load sample data.</div>`;
+    }
+
+    function renderHistory() {
+      const svg = document.getElementById("historyChart");
+      const width = 900;
+      const height = 260;
+      const pad = 34;
+      const completed = state.fixtures.filter(isComplete);
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+      if (completed.length === 0 || state.owners.length === 0) {
+        svg.innerHTML = `<text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="#5b6674">Sync results to build the history chart</text>`;
+        return;
+      }
+
+      const snapshots = completed.map((_, index) => ownerRows(completed.slice(0, index + 1)));
+      const maxRank = Math.max(state.owners.length, 1);
+      const stepX = snapshots.length === 1 ? 0 : (width - pad * 2) / (snapshots.length - 1);
+      const stepY = maxRank === 1 ? 0 : (height - pad * 2) / (maxRank - 1);
+
+      const grid = Array.from({ length: maxRank }, (_, index) => {
+        const y = pad + index * stepY;
+        return `<line x1="${pad}" y1="${y}" x2="${width - pad}" y2="${y}" stroke="#edf1f5"></line><text x="10" y="${y + 5}" fill="#5b6674" font-size="12">#${index + 1}</text>`;
+      }).join("");
+
+      const lines = state.owners.map(owner => {
+        const points = snapshots.map((snapshot, index) => {
+          const rank = snapshot.findIndex(row => row.id === owner.id) + 1;
+          return `${pad + index * stepX},${pad + (rank - 1) * stepY}`;
+        }).join(" ");
+        return `<polyline points="${points}" fill="none" stroke="${owner.color}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></polyline>`;
+      }).join("");
+
+      const labels = state.owners.map(owner => {
+        const finalSnapshot = snapshots[snapshots.length - 1];
+        const rank = finalSnapshot.findIndex(row => row.id === owner.id) + 1;
+        return `<text x="${width - pad + 8}" y="${pad + (rank - 1) * stepY + 5}" fill="${owner.color}" font-size="13" font-weight="700">${owner.name}</text>`;
+      }).join("");
+
+      svg.innerHTML = `${grid}${lines}${labels}`;
+    }
+
+    function updateApiStatus(status) {
+      state.api.status = status;
+      render();
+    }
+
+    async function fetchApi(kind) {
+      if (window.location.protocol === "file:") {
+        throw new Error("Live sync needs the Netlify app URL or Netlify Dev. This local file preview can only use sample data.");
+      }
+
+      const params = new URLSearchParams({
+        kind,
+        league: state.api.league,
+        season: state.api.season
+      });
+
+      const response = await fetch(`/.netlify/functions/api-football?${params.toString()}`);
+
+      if (response.status === 404) {
+        throw new Error("Netlify Function not found. Deploy the whole folder to Netlify, or run with Netlify Dev locally.");
+      }
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `API request failed: ${response.status}`);
+      if (data.error) throw new Error(data.error);
+      recordApiRequest();
+      saveState();
+      return data.response || [];
+    }
+
+    async function syncTeamsFromApi() {
+      updateApiStatus("Syncing teams...");
+      try {
+        const teamsResponse = await fetchApi("teams");
+        state.availableTeams = teamsResponse
+          .map(item => item.team)
+          .filter(Boolean)
+          .map(team => ({ id: team.id, name: team.name }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+        updateApiStatus(`Synced ${state.availableTeams.length} teams`);
+      } catch (error) {
+        updateApiStatus(error.message);
+      }
+    }
+
+    async function syncFixturesFromApi(options = {}) {
+      updateApiStatus(options.automatic ? "Auto-syncing fixtures..." : "Syncing fixtures...");
+      try {
+        const fixturesResponse = await fetchApi("fixtures");
+        state.fixtures = fixturesResponse.map(item => ({
+          id: item.fixture.id,
+          stage: item.league.round || "",
+          utcDate: item.fixture.date || null,
+          status: item.fixture.status.short,
+          home: { id: item.teams.home.id, name: item.teams.home.name },
+          away: { id: item.teams.away.id, name: item.teams.away.name },
+          homeGoals: item.goals.home,
+          awayGoals: item.goals.away
+        }));
+        state.api.lastSyncIso = new Date().toISOString();
+        state.api.lastSync = formatDateTime(state.api.lastSyncIso);
+        state.api.status = `Synced ${state.fixtures.filter(isComplete).length} completed results`;
+      } catch (error) {
+        state.api.status = error.message;
+      }
+      scheduleAutoSync();
+      render();
+    }
+
+    function scheduleAutoSync() {
+      if (autoSyncTimer) {
+        clearTimeout(autoSyncTimer);
+        autoSyncTimer = null;
+      }
+
+      if (state.api.autoSync === false || requestsRemainingToday() <= 0) {
+        state.api.nextAutoSync = "";
+        saveState();
+        return;
+      }
+
+      const window = matchWindowForDate();
+      if (!window) {
+        state.api.nextAutoSync = "";
+        saveState();
+        return;
+      }
+
+      const now = new Date();
+      if (now > window.end) {
+        state.api.nextAutoSync = "";
+        saveState();
+        return;
+      }
+
+      const delay = now < window.start
+        ? window.start.getTime() - now.getTime()
+        : autoSyncIntervalMs(now);
+
+      state.api.nextAutoSync = new Date(now.getTime() + delay).toISOString();
+      saveState();
+
+      autoSyncTimer = setTimeout(async () => {
+        if (state.api.autoSync !== false && isInsideMatchWindow() && requestsRemainingToday() > 0) {
+          await syncFixturesFromApi({ automatic: true });
+        } else {
+          scheduleAutoSync();
+          render();
+        }
+      }, delay);
+    }
+
+    document.querySelectorAll(".tab-button").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".tab-button").forEach(item => item.setAttribute("aria-selected", "false"));
+        document.querySelectorAll(".section").forEach(section => section.classList.remove("active"));
+        button.setAttribute("aria-selected", "true");
+        document.getElementById(button.dataset.tab).classList.add("active");
+        document.getElementById("pageTitle").textContent = button.textContent === "Table" ? "League Table" : button.textContent;
+      });
+    });
+
+    document.getElementById("ownerForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const nameInput = document.getElementById("ownerName");
+      const name = nameInput.value.trim();
+      if (!name) return;
+      const id = slugify(name);
+      if (state.owners.some(owner => owner.id === id)) return;
+      state.owners.push({
+        id,
+        name,
+        color: colors[state.owners.length % colors.length],
+        selections: {
+          elite: blankTeam(),
+          challenger: blankTeam(),
+          midTier: blankTeam(),
+          longshot: blankTeam(),
+          underdog: blankTeam()
+        }
+      });
+      nameInput.value = "";
+      render();
+    });
+
+    document.getElementById("teamForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const ownerId = document.getElementById("teamOwner").value;
+      const tierId = document.getElementById("teamTier").value;
+      const selectedId = document.getElementById("teamSelect").value;
+      const owner = state.owners.find(item => item.id === ownerId);
+      if (!owner) return;
+      if (!selectedId) {
+        owner.selections[tierId] = blankTeam();
+      } else if (!selectedTeamKeys(ownerId, tierId).has(String(selectedId))) {
+        const apiTeam = state.availableTeams.find(team => String(team.id) === String(selectedId));
+        if (apiTeam) owner.selections[tierId] = { id: apiTeam.id, name: apiTeam.name };
+      }
+      render();
+    });
+
+    document.getElementById("apiForm").addEventListener("submit", event => {
+      event.preventDefault();
+      state.api.league = document.getElementById("apiLeague").value.trim() || "1";
+      state.api.season = document.getElementById("apiSeason").value.trim() || "2026";
+      state.api.autoSync = document.getElementById("autoSyncEnabled").checked;
+      state.api.status = "Settings saved";
+      scheduleAutoSync();
+      render();
+    });
+
+    document.getElementById("teamOwner").addEventListener("change", renderTeamOptions);
+    document.getElementById("teamTier").addEventListener("change", renderTeamOptions);
+    document.getElementById("syncTeams").addEventListener("click", syncTeamsFromApi);
+    document.getElementById("syncFixtures").addEventListener("click", () => syncFixturesFromApi());
+    document.getElementById("syncFixturesPanel").addEventListener("click", () => syncFixturesFromApi());
+    document.getElementById("testApi").addEventListener("click", syncTeamsFromApi);
+    document.getElementById("autoSyncEnabled").addEventListener("change", event => {
+      state.api.autoSync = event.target.checked;
+      state.api.status = event.target.checked ? "Auto-sync enabled" : "Auto-sync paused";
+      scheduleAutoSync();
+      render();
+    });
+
+    document.getElementById("loadSampleFixtures").addEventListener("click", () => {
+      state.availableTeams = structuredClone(sampleTeams);
+      state.fixtures = structuredClone(sampleFixtures);
+      state.api.status = "Sample data loaded";
+      scheduleAutoSync();
+      render();
+    });
+
+    document.getElementById("clearFixtures").addEventListener("click", () => {
+      state.fixtures = [];
+      state.api.status = "Results cleared";
+      scheduleAutoSync();
+      render();
+    });
+
+    document.addEventListener("click", event => {
+      const ownerId = event.target.dataset.removeOwner;
+      if (!ownerId) return;
+      state.owners = state.owners.filter(owner => owner.id !== ownerId);
+      render();
+    });
+
+    document.getElementById("resetDemo").addEventListener("click", () => {
+      state = structuredClone(defaultState);
+      scheduleAutoSync();
+      render();
+    });
+
+    document.getElementById("exportData").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "family-world-cup-fantasy-data.json";
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    scheduleAutoSync();
+    render();
+  </script>
+</body>
+</html>
