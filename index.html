@@ -1397,6 +1397,8 @@
     async function syncTeamsFromApi() {
       updateApiStatus("Syncing teams...");
 
+      console.log("API TEAMS:", data);
+
       try {
         const data = await fetchApi("teams");
 
@@ -1421,11 +1423,13 @@
     async function syncFixturesFromApi(options = {}) {
       updateApiStatus(options.automatic ? "Auto-syncing..." : "Syncing fixtures...");
 
+      console.log("API MATCHES:", data);
+
       try {
         const data = await fetchApi("matches");
 
         state.fixtures = (data.matches || [])
-          .filter(match => match.homeTeam && match.awayTeam)
+          .filter(match => match.homeTeam?.id && match.awayTeam?.id)
           .map(match => ({
           id: match.id,
           stage: match.stage || match.group || "",
@@ -1574,8 +1578,10 @@
     });
 
     document.getElementById("loadSampleFixtures").addEventListener("click", () => {
-      state.availableTeams = structuredClone(sampleTeams);
-      state.fixtures = structuredClone(sampleFixtures);
+      //state.availableTeams = structuredClone(sampleTeams);
+      //state.fixtures = structuredClone(sampleFixtures);
+      state.availableTeams = [];
+      state.fixtures = [];
       state.api.status = "Sample data loaded";
       scheduleAutoSync();
       render();
