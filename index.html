@@ -1401,7 +1401,7 @@
 
         console.log("Starting teams fetch");
 
-        const data = await fetchApi("teams");
+        const data = await fetchApi("teams", {skipSeason: true});
 
         console.log("API returned: ", data);
 
