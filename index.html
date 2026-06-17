@@ -902,10 +902,7 @@
       render();
     });
 
-    function loadState() {
-      //const saved = localStorage.getItem(storageKey);
-
-      async function loadStateFromServer() {
+    async function loadStateFromServer() {
         const res = await fetch("/.netlify/functions/state");
         const data = await res.json();
 
@@ -913,6 +910,9 @@
           ? data
           : structuredClone(defaultState);
       }
+
+    function loadState() {
+      //const saved = localStorage.getItem(storageKey);
 
       if (!saved) return structuredClone(defaultState);
       try {
