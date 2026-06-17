@@ -1401,6 +1401,10 @@
       if (response.status === 404) {
         throw new Error("Netlify Function not found. Deploy the whole folder to Netlify, or run with Netlify Dev locally.");
       }
+    
+      if (["teams", "matches"].includes(kind)) {
+        options.skipSeason = true;
+      }
 
       const data = await parseFunctionResponse(response);
       if (!response.ok) throw new Error(data.error || `API request failed: ${response.status}`);
@@ -1460,7 +1464,7 @@
       try {
         console.log("👉 Starting fixtures fetch");
 
-        const data = await fetchApi("matches");  // ✅ FIRST define it
+        const data = await fetchApi("matches", {skipSeason: true});  // ✅ FIRST define it
 
         console.log("✅ Match API returned:", data); // ✅ THEN use it
 
