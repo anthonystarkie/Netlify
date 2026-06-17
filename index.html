@@ -894,11 +894,26 @@
     const expectedMatchDurationMs = 2 * 60 * 60 * 1000;
     const postGameBufferMs = 2 * 60 * 60 * 1000;
     const minimumAutoSyncMs = 5 * 60 * 1000;
-    let autoSyncTimer = null;
-    let state = loadState();
+    let autoSyncTimer = null;    
+    let state = structuredClone(defaultState);
+
+    loadStateFromServer().then(serverState => {
+      state = serverState;
+      render();
+    });
 
     function loadState() {
-      const saved = localStorage.getItem(storageKey);
+      //const saved = localStorage.getItem(storageKey);
+
+      async function loadStateFromServer() {
+        const res = await fetch("/.netlify/functions/state");
+        const data = await res.json();
+
+        return data && Object.keys(data).length
+          ? data
+          : structuredClone(defaultState);
+      }
+
       if (!saved) return structuredClone(defaultState);
       try {
         return migrateState(JSON.parse(saved));
@@ -930,8 +945,18 @@
       return saved;
     }
 
-    function saveState() {
+    /*function saveState() {
       localStorage.setItem(storageKey, JSON.stringify(state));
+    }*/
+
+    async function saveState() {
+      await fetch("/.netlify/functions/state", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(state)
+      });
     }
 
     function todayKey(date = new Date()) {
@@ -1204,7 +1229,7 @@
 
         if (contributionTitle && leader) {
           contributionTitle.textContent = `Team Contribution (${leader.name})`;
-        }
+        }s
     }
 
     function renderOwners() {
