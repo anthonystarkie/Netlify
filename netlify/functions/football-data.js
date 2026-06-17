@@ -103,6 +103,20 @@ exports.handler = async function handler(event) {
       });
   }
 
+
+const url = `${FOOTBALL_DATA_BASE_URL}${endpoint}`;
+
+// ✅ ADD THIS DEBUG BLOCK
+return json(200, {
+  debug: {
+    apiKeyExists: !!apiKey,
+    baseUrl: FOOTBALL_DATA_BASE_URL,
+    endpoint,
+    finalUrl: url
+  }
+});
+
+
   let baseUrl;
 
   try {
