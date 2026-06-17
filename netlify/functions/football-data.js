@@ -17,6 +17,7 @@ function resolveBaseUrl() {
   return configured.replace(/\/$/, "");
 }
 
+/*
 async function readJsonResponse(response, requestUrl) {
   const text = await response.text();
   const trimmed = text.trim();
@@ -42,6 +43,7 @@ async function readJsonResponse(response, requestUrl) {
     );
   }
 }
+*/
 
 exports.handler = async function handler(event) {
   const apiKey = (process.env.FOOTBALL_DATA_KEY || "").trim();
@@ -125,7 +127,8 @@ exports.handler = async function handler(event) {
       }
     });
 
-    const payload = await readJsonResponse(response, url.toString());
+    const payload = await response.json();  
+    //const payload = await readJsonResponse(response, url.toString());
 
     if (!response.ok) {
       return json(response.status, {
@@ -133,6 +136,13 @@ exports.handler = async function handler(event) {
           payload?.message ||
           `Football-Data request failed with status ${response.status}.`
       });
+    }
+
+    if (kind === "teams") {
+      payload.teams = (payload.teams || []).map(t => ({
+        id: t.id,
+        name: t.name
+      }));
     }
 
     return json(
