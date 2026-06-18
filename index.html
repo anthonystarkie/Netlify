@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Family World Cup Fantasy League</title>
@@ -548,6 +549,7 @@
         <div class="metric">
           <strong id="metricMatches">0</strong>
           <span class="subtle">Completed fixtures</span>
+          
         </div>
         <div class="metric">
           <strong id="metricTeams">0</strong>
@@ -564,7 +566,7 @@
         </div>
         <div class="actions">
           <button id="syncFixtures">Sync results</button>
-          <button id="resetDemo">Reset demo</button>
+          <button id="resetDemo" disabled>Reset demo</button>
           <button class="primary" id="exportData">Export data</button>
         </div>
       </div>
@@ -684,8 +686,8 @@
               </div>
               <div class="form-actions">
                 <button class="primary" id="syncFixturesPanel" type="button">Sync results</button>
-                <button id="loadSampleFixtures" type="button">Load sample fixtures</button>
-                <button class="danger" id="clearFixtures" type="button">Clear results</button>
+                <button id="loadSampleFixtures" type="button" disabled>Load sample fixtures</button>
+                <button class="danger" id="clearFixtures" type="button" disabled>Clear results</button>
               </div>
             </div>
           </div>
@@ -773,6 +775,12 @@
   </div>
 
   <script>
+
+    const db = supabase.createClient(
+      "https://dzalyvtewzjtyupbmjpj.supabase.co",
+      "sb_publishable_3biZ1jQFJPMK2tRvMgxVrQ_T1qJlTZ2"
+    );
+
     const tiers = [
       { id: "elite", label: "Elite", win: 1, draw: 0.5 },
       { id: "challenger", label: "Challenger", win: 2, draw: 1 },
@@ -883,8 +891,8 @@
           }
         }
       ],
-      availableTeams: structuredClone(sampleTeams),
-      fixtures: structuredClone(sampleFixtures)
+      availableTeams: [], //structuredClone(sampleTeams),
+      fixtures: [] //structuredClone(sampleFixtures)
     };
 
     const storageKey = "familyWorldCupFantasyApiPrototype";
@@ -894,24 +902,11 @@
     const expectedMatchDurationMs = 2 * 60 * 60 * 1000;
     const postGameBufferMs = 2 * 60 * 60 * 1000;
     const minimumAutoSyncMs = 5 * 60 * 1000;
-    let autoSyncTimer = null;    
-    let state = structuredClone(defaultState);
-    
-    loadStateFromServer().then(serverState => {
-      state = serverState;
-      render();
+    let autoSyncTimer = null;
+    //let state = loadState();
 
-      setInterval(async () => {
-        const latest = await loadStateFromServer();
-        state = latest;
-        render();
-      }, 15000);
-
-    });
-
-    function loadState() {
-      //const saved = localStorage.getItem(storageKey);
-
+    /*function loadState() {
+      const saved = localStorage.getItem(storageKey);
       if (!saved) return structuredClone(defaultState);
       try {
         return migrateState(JSON.parse(saved));
@@ -919,6 +914,120 @@
         return structuredClone(defaultState);
       }
     }
+    */
+
+    let state = structuredClone(defaultState);
+
+    /*
+    (async () => {
+      state = await loadStateFromDB();
+      render();
+    })();
+    */
+
+    /*
+    async function loadStateFromDB() {
+      const { data: owners, error } = await db
+        .from("owners")
+        .select("*");
+
+      if (error) {
+        console.error(error);
+        return structuredClone(defaultState);
+      }
+
+      const { data: selections } = await db
+        .from("selections")
+        .select("*");
+
+      const ownersWithSelections = owners.map(owner => {
+        const ownerSelections = selections.filter(s => s.owner_id === owner.id);
+
+        const selectionMap = {};
+        tiers.forEach(t => selectionMap[t.id] = blankTeam());
+
+        ownerSelections.forEach(s => {
+          selectionMap[s.tier] = {
+            id: s.team_id,
+            name: s.team_name
+          };
+        });
+
+        return {
+          ...owner,
+          selections: selectionMap
+        };
+      });
+
+       return {
+        ...defaultState,
+        owners: ownersWithSelections
+      };
+    }
+      */
+
+      async function loadStateFromDB() {
+        try {
+          const { data: owners } = await db.from("owners").select("*");
+          const { data: selections } = await db.from("selections").select("*");
+
+          const ownersWithSelections = (owners || []).map(owner => {
+            const selectionMap = {};
+            tiers.forEach(t => selectionMap[t.id] = blankTeam());
+
+            (selections || [])
+              .filter(s => s.owner_slug === owner.slug)
+              .forEach(s => {
+                selectionMap[s.tier] = {
+                  id: s.team_id,
+                  name: s.team_name
+                };
+              });
+
+            return {
+              ...owner,
+              selections: selectionMap
+            };
+          });
+
+          return {
+            ...defaultState,
+            owners: ownersWithSelections,
+            availableTeams: state?.availableTeams || []
+          };
+
+        } catch (err) {
+          console.error("Load error:", err);
+          return structuredClone(defaultState);
+        }
+      }
+     
+    
+
+    (async () => {
+
+      console.log("loadStateFromDB =", loadStateFromDB);
+
+      state = await loadStateFromDB();
+
+      // ✅ Load real API teams automatically
+      await syncTeamsFromApi();
+
+      render();
+
+      // ✅ polling (multi-user sync)
+      setInterval(async () => {
+        const newState = await loadStateFromDB();
+
+        newState.availableTeams = state.availableTeams;
+
+        if (JSON.stringify(newState.owners) !== JSON.stringify(state.owners)) {
+          state = newState;
+          render();
+        }
+      }, 5000);
+
+    })();
 
     function migrateState(saved) {
       if (!saved.owners || !saved.fixtures) return structuredClone(defaultState);
@@ -943,39 +1052,46 @@
       return saved;
     }
 
-    /*function saveState() {
-      localStorage.setItem(storageKey, JSON.stringify(state));
-    }*/
-
-    let ADMIN_TOKEN = "";
-
-    async function saveState() {
+    function saveState() {
+      // localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+    
+    async function saveOwnersToDB(newOwnerOnly) {
       
-      if (!ADMIN_TOKEN) {
-        ADMIN_TOKEN = prompt("Enter admin password:");
-        }
+    if (!newOwnerOnly) return;
 
-      await fetch("/.netlify/functions/state", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-token": ADMIN_TOKEN // ✅ must match your env var
-        },
-        body: JSON.stringify(state)
+      await db.from("owners").upsert({
+        slug: newOwnerOnly.id,
+        name: newOwnerOnly.name,
+        color: newOwnerOnly.color
+      }, {
+        onConflict: "slug"
       });
+
     }
 
-    async function loadStateFromServer() {
-        const res = await fetch("/.netlify/functions/state");
-        const data = await res.json();
+    async function saveSelection(ownerSlug, tierId, team) {
 
-        return data && Object.keys(data).length
-          ? data
-          : structuredClone(defaultState);
+      console.log("SAVE SELECTION CALLED:", ownerSlug, tierId, team);
+
+      const { data, error } = await db.from("selections").upsert({
+        owner_slug: ownerSlug,
+        tier: tierId,
+        team_id: team?.id || null,
+        team_name: team?.name || null
+      }, {
+        onConflict: "owner_slug,tier"
+      });
+
+      console.log("SAVE RESULT:", data, error);
+
+      if (error) {
+        console.error("❌ SELECTION ERROR:", error.message, error);
       }
+    }
 
     function todayKey(date = new Date()) {
-      return date.toLocaleDateString("en-CA");
+      return date.toLocaleDateString("en-GB");
     }
 
     function ensureRequestLog() {
@@ -1178,14 +1294,15 @@
       renderSelects();
       renderApi();
       renderHistory();
-      saveState();
+      //saveState();
     }
 
     function renderMetrics() {
       const rows = ownerRows();
       const selectedCount = state.owners.reduce((total, owner) => total + tiers.filter(tier => owner.selections[tier.id]?.id).length, 0);
       document.getElementById("metricLeader").textContent = rows[0] ? rows[0].name : "-";
-      document.getElementById("metricMatches").textContent = state.fixtures.filter(isComplete).length;
+      //document.getElementById("metricMatches").textContent = state.fixtures.filter(isComplete).length;
+      document.getElementById("metricMatches").textContent = `${state.fixtures.filter(isComplete).length} / ${state.fixtures.length}`;
       document.getElementById("metricTeams").textContent = selectedCount;
       document.getElementById("lastUpdated").textContent = `Last synced: ${formatDateTime(state.api.lastSyncIso)}`;
       document.getElementById("apiStatus").textContent = state.api.status || "Ready";
@@ -1244,7 +1361,7 @@
 
         if (contributionTitle && leader) {
           contributionTitle.textContent = `Team Contribution (${leader.name})`;
-        }s
+        }
     }
 
     function renderOwners() {
@@ -1351,7 +1468,7 @@
       const ownerId = document.getElementById("teamOwner").value;
       const tierId = document.getElementById("teamTier").value;
       const unavailable = selectedTeamKeys(ownerId, tierId);
-      const current = state.owners.find(owner => owner.id === ownerId)?.selections[tierId];
+      const current = state.owners.find(owner => String(owner.id) === String(ownerId))?.selections[tierId];
       document.getElementById("teamSelect").innerHTML = [
         `<option value="">Empty</option>`,
         ...state.availableTeams.map(team => {
@@ -1479,7 +1596,7 @@
       if (!response.ok) throw new Error(data.error || `API request failed: ${response.status}`);
       if (data.error) throw new Error(data.error);
       recordApiRequest();
-      saveState();
+      //saveState();
       return data;
     }
 
@@ -1581,21 +1698,21 @@
 
           if (state.api.autoSync === false || requestsRemainingToday() <= 0) {
             state.api.nextAutoSync = "";
-            saveState();
+            //saveState();
             return;
           }
 
           const window = matchWindowForDate();
           if (!window) {
             state.api.nextAutoSync = "";
-            saveState();
+            //saveState();
             return;
           }
 
           const now = new Date();
           if (now > window.end) {
             state.api.nextAutoSync = "";
-            saveState();
+            //saveState();
             return;
           }
 
@@ -1604,8 +1721,8 @@
             : autoSyncIntervalMs(now);
 
           state.api.nextAutoSync = new Date(now.getTime() + delay).toISOString();
-          saveState();
-
+          //saveState();
+       
           autoSyncTimer = setTimeout(async () => {
             if (state.api.autoSync !== false && isInsideMatchWindow() && requestsRemainingToday() > 0) {
               await syncFixturesFromApi({ automatic: true });
@@ -1626,43 +1743,105 @@
       });
     });
 
-    document.getElementById("ownerForm").addEventListener("submit", event => {
-      event.preventDefault();
-      const nameInput = document.getElementById("ownerName");
-      const name = nameInput.value.trim();
-      if (!name) return;
-      const id = slugify(name);
-      if (state.owners.some(owner => owner.id === id)) return;
-      state.owners.push({
-        id,
-        name,
-        color: colors[state.owners.length % colors.length],
-        selections: {
-          elite: blankTeam(),
-          challenger: blankTeam(),
-          midTier: blankTeam(),
-          longshot: blankTeam(),
-          underdog: blankTeam()
+    document.addEventListener("DOMContentLoaded", () => {
+    
+      document.getElementById("ownerForm").addEventListener("submit", async event => {
+        event.preventDefault();
+
+        console.log("FORM SUBMITTED");
+
+        const nameInput = document.getElementById("ownerName");
+        const name = nameInput.value.trim();
+        if (!name) return;
+
+        const id = slugify(name);
+
+        // ✅ Declare FIRST
+        const newOwner = {
+          id,
+          name,
+          color: colors[state.owners.length % colors.length]
+        };
+
+        console.log("About to insert:", newOwner);
+
+        // ✅ THEN use it
+        const { data, error } = await db.from("owners").upsert({
+          slug: newOwner.id,
+          name: newOwner.name,
+          color: newOwner.color
+        }, {
+          onConflict: "slug"
+        });
+
+        console.log("INSERT RESULT:", data, error);
+
+        if (error) return;
+
+        nameInput.value = "";
+
+        // ✅ Reload from DB after save
+        state = await loadStateFromDB();
+        render();
+      });
+
+      
+      document.getElementById("teamForm").addEventListener("submit", async event => {
+        event.preventDefault();
+
+        try {
+
+          const ownerValue = document.getElementById("teamOwner").value;
+          const tierId = document.getElementById("teamTier").value;
+          const selectedId = document.getElementById("teamSelect").value;
+
+          console.log("FORM VALUES:", ownerValue, tierId, selectedId);
+
+          // ✅ Step 1: find owner
+          const owner = state.owners.find(o => String(o.id) === String(ownerValue));
+
+          console.log("FOUND OWNER:", owner);
+
+          if (!owner) {
+            console.error("❌ OWNER NOT FOUND");
+            return;
+          }
+
+          // ✅ Step 2: find team
+          let team = null;
+
+          if (selectedId) {
+            const apiTeam = state.availableTeams.find(t => String(t.id) === String(selectedId));
+
+            console.log("FOUND TEAM:", apiTeam);
+
+            if (apiTeam) {
+              team = {
+                id: apiTeam.id,
+                name: apiTeam.name
+              };
+            }
+          }
+
+          // ✅ Step 3: update state
+          owner.selections[tierId] = team || blankTeam();
+
+          console.log("UPDATED STATE ✅", owner.selections[tierId]);
+
+          // ✅ Step 4: SAVE
+          console.log("CALLING SAVE ✅");
+
+          await saveSelection(owner.slug, tierId, team);
+
+          // ✅ Step 5: refresh
+          state = await loadStateFromDB();
+          render();
+
+        } catch (err) {
+          console.error("❌ TEAM FORM ERROR:", err);
         }
       });
-      nameInput.value = "";
-      render();
-    });
 
-    document.getElementById("teamForm").addEventListener("submit", event => {
-      event.preventDefault();
-      const ownerId = document.getElementById("teamOwner").value;
-      const tierId = document.getElementById("teamTier").value;
-      const selectedId = document.getElementById("teamSelect").value;
-      const owner = state.owners.find(item => item.id === ownerId);
-      if (!owner) return;
-      if (!selectedId) {
-        owner.selections[tierId] = blankTeam();
-      } else if (!selectedTeamKeys(ownerId, tierId).has(String(selectedId))) {
-        const apiTeam = state.availableTeams.find(team => String(team.id) === String(selectedId));
-        if (apiTeam) owner.selections[tierId] = { id: apiTeam.id, name: apiTeam.name, flag: apiTeam.flag };
-      }
-      render();
     });
 
     document.getElementById("apiForm").addEventListener("submit", event => {
@@ -1728,8 +1907,19 @@
       URL.revokeObjectURL(url);
     });
 
+    //render();
+
+    setInterval(async () => {
+      const newState = await loadStateFromDB();
+
+      if (JSON.stringify(newState.owners) !== JSON.stringify(state.owners)) {
+        state = newState;
+        render();
+      }
+    }, 5000);
+
     scheduleAutoSync();
-    render();
+    
   </script>
 </body>
 </html>
