@@ -1,4 +1,3 @@
-//const DEFAULT_BASE_URL = "https://api.football-data.org/v4";
 const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
 
 
@@ -18,6 +17,7 @@ function resolveBaseUrl() {
   return configured.replace(/\/$/, "");
 }
 
+/*
 async function readJsonResponse(response, requestUrl) {
   const text = await response.text();
   const trimmed = text.trim();
@@ -43,6 +43,7 @@ async function readJsonResponse(response, requestUrl) {
     );
   }
 }
+*/
 
 exports.handler = async function handler(event) {
   const apiKey = (process.env.FOOTBALL_DATA_KEY || "").trim();
@@ -103,20 +104,6 @@ exports.handler = async function handler(event) {
       });
   }
 
-
-const url = `${FOOTBALL_DATA_BASE_URL}${endpoint}`;
-
-// ✅ ADD THIS DEBUG BLOCK
-return json(200, {
-  debug: {
-    apiKeyExists: !!apiKey,
-    baseUrl: FOOTBALL_DATA_BASE_URL,
-    endpoint,
-    finalUrl: url
-  }
-});
-
-
   let baseUrl;
 
   try {
@@ -125,21 +112,23 @@ return json(200, {
     return json(500, { error: error.message });
   }
 
-  const url = new URL(endpoint, `${baseUrl}/`);
+  //const url = new URL(endpoint, `${baseUrl}/`);
+  const url = `${baseUrl}${endpoint}`;
 
   if (season && kind !== "competition") {
     url.searchParams.set("season", season);
   }
 
   try {
-    const response = await fetch(url.toString(), {
+    const response = await fetch(url, {
       headers: {
         "X-Auth-Token": apiKey,
         Accept: "application/json"
       }
     });
 
-    const payload = await readJsonResponse(response, url.toString());
+    const payload = await response.json();  
+    //const payload = await readJsonResponse(response, url.toString());
 
     if (!response.ok) {
       return json(response.status, {
@@ -147,6 +136,14 @@ return json(200, {
           payload?.message ||
           `Football-Data request failed with status ${response.status}.`
       });
+    }
+
+    if (kind === "teams") {
+      payload.teams = (payload.teams || []).map(t => ({
+        id: t.id,
+        name: t.name,
+        crest: t.crest
+      }));
     }
 
     return json(

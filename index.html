@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Family World Cup Fantasy League</title>
@@ -61,7 +62,7 @@
     .app-shell {
       min-height: 100vh;
       display: grid;
-      grid-template-columns: 280px minmax(0, 1fr);
+      grid-template-columns: 180px minmax(0, 1fr);
     }
 
     aside {
@@ -91,6 +92,15 @@
       color: white;
       background: linear-gradient(135deg, var(--green), var(--teal) 55%, var(--coral));
       font-weight: 800;
+    }
+
+    .team-flag {
+      width: 18px;
+      height: auto;
+      object-fit: contain;
+      border-radius: 2px;
+      vertical-align: middle;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
     }
 
     h1 {
@@ -202,12 +212,17 @@
       gap: 16px;
       align-items: start;
     }
-
+    .span-1 { grid-column: span 1; }
+    .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: span 3; }
     .span-4 { grid-column: span 4; }
     .span-5 { grid-column: span 5; }
     .span-6 { grid-column: span 6; }
     .span-7 { grid-column: span 7; }
     .span-8 { grid-column: span 8; }
+    .span-9 { grid-column: span 9; }
+    .span-10 { grid-column: span 10; }
+    .span-11 { grid-column: span 11; }
     .span-12 { grid-column: span 12; }
 
     .panel {
@@ -290,6 +305,7 @@
     .pill {
       display: inline-flex;
       align-items: center;
+      gap: 6px;
       min-height: 26px;
       padding: 4px 9px;
       border: 1px solid var(--line);
@@ -298,6 +314,20 @@
       color: var(--muted);
       font-size: 0.82rem;
       white-space: nowrap;
+    }
+
+    .pill img {
+      border-radius: 2px;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+    }
+
+    .flag {
+      width: 16px;
+      height: 12px;
+      object-fit: cover;
+      border-radius: 2px;
+      margin-right: 4px;
+      vertical-align: middle;
     }
 
     .tier-pill {
@@ -438,6 +468,67 @@
       background: rgba(36, 98, 168, 0.07);
     }
 
+    /* Hide cards on desktop */
+    .league-cards {
+      display: none;
+    }
+
+    #leagueTable,
+    .league-cards {
+      transition: all 0.3s ease;
+    }
+
+    /* Mobile view */
+    @media (max-width: 768px) {
+
+      /* Hide table */
+      #leagueTable {
+        display: none !important; /* Force hide */
+      }
+
+      /* Show cards */
+      .league-cards {
+        display: block;
+      }
+
+      .league-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      }
+
+      .league-card h3 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+
+      .card-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+      
+      .points {
+        display: flex;
+        justify-content: flex-end; /* ✅ aligns right */
+        font-weight: bold;
+        margin-top: 8px;
+      }
+
+      .points-value {
+        text-align: right;
+      }
+
+      .team-flag {
+          width: 16px;
+      }
+
+    }
+
+
     @media (max-width: 1100px) {
       .tier-list {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -524,6 +615,7 @@
         <div class="metric">
           <strong id="metricMatches">0</strong>
           <span class="subtle">Completed fixtures</span>
+          
         </div>
         <div class="metric">
           <strong id="metricTeams">0</strong>
@@ -536,40 +628,45 @@
       <div class="topbar">
         <div>
           <h2 id="pageTitle">League Table</h2>
-          <p class="subtle">Netlify Functions fetch fixtures; every player gets one team in each weighted category.</p>
+          <p class="subtle">Netlify Functions fetch football-data.org results; every player gets one team in each weighted category.</p>
         </div>
         <div class="actions">
           <button id="syncFixtures">Sync results</button>
-          <button id="resetDemo">Reset demo</button>
+          <button id="resetDemo" disabled>Reset demo</button>
           <button class="primary" id="exportData">Export data</button>
         </div>
       </div>
 
       <section class="section active" id="standings">
         <div class="grid">
-          <div class="panel span-8">
+          <div class="panel span-9">
             <div class="panel-header">
               <h3>Live Standings</h3>
               <span class="pill" id="lastUpdated">Ready</span>
             </div>
             <div class="panel-body" style="padding:0">
-              <table>
+              <table id="leagueTable">
                 <thead>
                   <tr>
                     <th>Rank</th>
-                    <th>Family member</th>
-                    <th>Teams</th>
+                    <th>Family member</th>                    
+                    <th>Elite</th>
+                    <th>Challenger</th>
+                    <th>Mid-Tier</th>
+                    <th>Longshot</th>
+                    <th>Underdog</th>
                     <th>Points</th>
                   </tr>
                 </thead>
                 <tbody id="standingsBody"></tbody>
               </table>
             </div>
+            <div id="leagueCards" class="league-cards"></div>
           </div>
 
-          <div class="panel span-4">
+          <div class="panel span-3">
             <div class="panel-header">
-              <h3>Team Contribution</h3>
+              <h3 id="teamContributionTitle">Team Contribution</h3>
             </div>
             <div class="panel-body">
               <div class="bar-list" id="projectionBars"></div>
@@ -652,12 +749,12 @@
             </div>
             <div class="panel-body">
               <div class="notice">
-                Auto-sync only runs during today's match window, from the earliest kickoff until two hours after the latest expected match end. Manual syncs also count toward the daily API budget.
+                Auto-sync only runs during today's match window, from the earliest kickoff until two hours after the latest expected match end. Manual syncs also count toward the app's daily request budget.
               </div>
               <div class="form-actions">
                 <button class="primary" id="syncFixturesPanel" type="button">Sync results</button>
-                <button id="loadSampleFixtures" type="button">Load sample fixtures</button>
-                <button class="danger" id="clearFixtures" type="button">Clear results</button>
+                <button id="loadSampleFixtures" type="button" disabled>Load sample fixtures</button>
+                <button class="danger" id="clearFixtures" type="button" disabled>Clear results</button>
               </div>
             </div>
           </div>
@@ -684,19 +781,19 @@
         <div class="grid">
           <div class="panel span-7">
             <div class="panel-header">
-              <h3>API-Football Settings</h3>
+              <h3>Football-Data.org Settings</h3>
             </div>
             <div class="panel-body">
               <form id="apiForm">
                 <div class="form-grid">
-                  <label>Competition code (e.g., WC, PL, CL)
-                    <input id="apiLeague" placeholder="WC">
+                  <label>Competition code
+                    <input id="apiCompetition" placeholder="WC" autocomplete="off">
                   </label>
                   <label>Season
                     <input id="apiSeason" inputmode="numeric" placeholder="2026">
                   </label>
                 </div>
-                <p class="subtle">Your API key is read from the Netlify environment variable <strong>API_FOOTBALL_KEY</strong>, so family members never need to enter it.</p>
+                <p class="subtle">Your API token is read from the Netlify environment variable <strong>FOOTBALL_DATA_KEY</strong>, so family members never need to enter it.</p>
                 <label style="margin-top:14px">
                   <span><input id="autoSyncEnabled" type="checkbox" style="width:auto; min-height:auto; margin-right:8px">Auto-sync results during live match windows</span>
                 </label>
@@ -745,6 +842,88 @@
   </div>
 
   <script>
+    
+    async function loadConfig() {
+      const res = await fetch("/.netlify/functions/config");
+
+      if (!res.ok) {
+        throw new Error("Failed to load config");
+      }
+
+      return await res.json();
+    }
+    
+    let db;    
+    let state = {
+      owners: [],
+      availableTeams: [],
+      fixtures: [],
+      api: {
+        status: null,
+        requestLog: []
+      }
+    };
+
+    
+    /*
+    async function initApp() {
+
+      const config = await loadConfig();
+
+      db = supabase.createClient(
+        config.SUPABASE_URL,
+        config.SUPABASE_KEY
+      );
+
+      console.log("DB value before load:", db);
+
+      console.log("✅ DB initialised");
+
+      state = await loadStateFromDB();
+
+      await syncTeamsFromApi();
+
+      render();
+      renderSelects();
+
+      startPolling();
+    }
+    */
+
+    async function initApp() {
+      try {
+        const config = await loadConfig();
+
+        db = supabase.createClient(
+          config.SUPABASE_URL,
+          config.SUPABASE_KEY
+        );
+
+        console.log("✅ DB initialised");
+
+        // ✅ Load DB first
+        const dbState = await loadStateFromDB();
+
+        state = {
+          ...state,           // preserves api + teams
+          owners: dbState.owners || []
+        };
+
+        // ✅ THEN load API
+        await syncTeamsFromApi();
+
+        render();
+        renderSelects();
+
+        startPolling();
+
+      } catch (err) {
+        console.error("❌ INIT ERROR:", err);
+      }
+    }
+
+    initApp();
+
     const tiers = [
       { id: "elite", label: "Elite", win: 1, draw: 0.5 },
       { id: "challenger", label: "Challenger", win: 2, draw: 1 },
@@ -763,32 +942,32 @@
     ];
 
     const sampleTeams = [
-      { id: 10, name: "England" },
-      { id: 6, name: "Brazil" },
-      { id: 26, name: "Argentina" },
-      { id: 2, name: "France" },
-      { id: 25, name: "Germany" },
-      { id: 31, name: "Japan" },
-      { id: 20, name: "Morocco" },
-      { id: 2384, name: "Scotland" },
-      { id: 2382, name: "USA" },
-      { id: 9, name: "Spain" },
-      { id: 27, name: "Portugal" },
-      { id: 21, name: "Netherlands" },
-      { id: 15, name: "Mexico" },
-      { id: 7, name: "Uruguay" },
-      { id: 17, name: "Senegal" }
+      { id: 770, name: "England" },
+      { id: 764, name: "Brazil" },
+      { id: 762, name: "Argentina" },
+      { id: 773, name: "France" },
+      { id: 759, name: "Germany" },
+      { id: 769, name: "Japan" },
+      { id: 779, name: "Morocco" },
+      { id: 776, name: "Scotland" },
+      { id: 758, name: "USA" },
+      { id: 760, name: "Spain" },
+      { id: 765, name: "Portugal" },
+      { id: 782, name: "Netherlands" },
+      { id: 771, name: "Mexico" },
+      { id: 788, name: "Uruguay" },
+      { id: 778, name: "Senegal" }
     ];
 
     const sampleFixtures = [
-      fixture(1001, "Group Stage", "England", 10, "USA", 2382, 2, 1),
-      fixture(1002, "Group Stage", "Brazil", 6, "Morocco", 20, 0, 0),
-      fixture(1003, "Group Stage", "France", 2, "Scotland", 2384, 1, 1),
-      fixture(1004, "Round of 32", "Argentina", 26, "Japan", 31, 2, 0),
-      fixture(1005, "Round of 16", "Germany", 25, "Morocco", 20, 1, 2),
-      fixture(1006, "Quarter-finals", "Brazil", 6, "France", 2, 3, 1),
-      fixture(1007, "Semi-finals", "England", 10, "Brazil", 6, 2, 1),
-      fixture(1008, "Final", "England", 10, "Argentina", 26, 1, 0)
+      fixture(1001, "GROUP_STAGE", "England", 770, "USA", 758, 2, 1),
+      fixture(1002, "GROUP_STAGE", "Brazil", 764, "Morocco", 779, 0, 0),
+      fixture(1003, "GROUP_STAGE", "France", 773, "Scotland", 776, 1, 1),
+      fixture(1004, "LAST_32", "Argentina", 762, "Japan", 769, 2, 0),
+      fixture(1005, "LAST_16", "Germany", 759, "Morocco", 779, 1, 2),
+      fixture(1006, "QUARTER_FINALS", "Brazil", 764, "France", 773, 3, 1),
+      fixture(1007, "SEMI_FINALS", "England", 770, "Brazil", 764, 2, 1),
+      fixture(1008, "FINAL", "England", 770, "Argentina", 762, 1, 0)
     ];
 
     function fixture(id, stage, homeName, homeId, awayName, awayId, homeGoals, awayGoals) {
@@ -796,7 +975,7 @@
         id,
         stage,
         utcDate: null,
-        status: "FT",
+        status: "FINISHED",
         home: { id: homeId, name: homeName },
         away: { id: awayId, name: awayName },
         homeGoals,
@@ -805,16 +984,16 @@
     }
 
     const defaultSelections = {
-      elite: { id: 10, name: "England" },
-      challenger: { id: 31, name: "Japan" },
-      midTier: { id: 6, name: "Brazil" },
-      longshot: { id: 2384, name: "Scotland" },
+      elite: { id: 770, name: "England" },
+      challenger: { id: 769, name: "Japan" },
+      midTier: { id: 764, name: "Brazil" },
+      longshot: { id: 776, name: "Scotland" },
       underdog: { id: null, name: "" }
     };
 
     const defaultState = {
       api: {
-        league: "1",
+        competition: "WC",
         season: "2026",
         autoSync: true,
         lastSync: "",
@@ -835,11 +1014,11 @@
           name: "Sarah",
           color: "#c84f3a",
           selections: {
-            elite: { id: 26, name: "Argentina" },
-            challenger: { id: 25, name: "Germany" },
-            midTier: { id: 20, name: "Morocco" },
-            longshot: { id: 2382, name: "USA" },
-            underdog: { id: 15, name: "Mexico" }
+            elite: { id: 762, name: "Argentina" },
+            challenger: { id: 759, name: "Germany" },
+            midTier: { id: 779, name: "Morocco" },
+            longshot: { id: 758, name: "USA" },
+            underdog: { id: 771, name: "Mexico" }
           }
         },
         {
@@ -847,16 +1026,16 @@
           name: "Ben",
           color: "#16784a",
           selections: {
-            elite: { id: 2, name: "France" },
-            challenger: { id: 9, name: "Spain" },
-            midTier: { id: 27, name: "Portugal" },
-            longshot: { id: 21, name: "Netherlands" },
-            underdog: { id: 7, name: "Uruguay" }
+            elite: { id: 773, name: "France" },
+            challenger: { id: 760, name: "Spain" },
+            midTier: { id: 765, name: "Portugal" },
+            longshot: { id: 782, name: "Netherlands" },
+            underdog: { id: 788, name: "Uruguay" }
           }
         }
       ],
-      availableTeams: structuredClone(sampleTeams),
-      fixtures: structuredClone(sampleFixtures)
+      availableTeams: [], //structuredClone(sampleTeams),
+      fixtures: [] //structuredClone(sampleFixtures)
     };
 
     const storageKey = "familyWorldCupFantasyApiPrototype";
@@ -867,21 +1046,109 @@
     const postGameBufferMs = 2 * 60 * 60 * 1000;
     const minimumAutoSyncMs = 5 * 60 * 1000;
     let autoSyncTimer = null;
-    let state = loadState();
 
-    function loadState() {
-      const saved = localStorage.getItem(storageKey);
-      if (!saved) return structuredClone(defaultState);
-      try {
-        return migrateState(JSON.parse(saved));
-      } catch {
-        return structuredClone(defaultState);
+     /* async function loadStateFromDB() {
+        try {
+
+          if (!db) {
+              console.warn("DB not ready yet ❌");
+              return { owners: [], availableTeams: [] };
+            }
+
+          const { data: owners } = await db.from("owners").select("*");
+          const { data: selections } = await db.from("selections").select("*");
+
+          const ownersWithSelections = (owners || []).map(owner => {
+            const selectionMap = {};
+            tiers.forEach(t => selectionMap[t.id] = blankTeam());
+
+            (selections || [])
+              .filter(s => s.owner_slug === owner.slug)
+              .forEach(s => {
+                selectionMap[s.tier] = {
+                  id: s.team_id,
+                  name: s.team_name,
+                  crest: s.team_crest
+                };
+              });
+
+            return {
+              ...owner,
+              selections: selectionMap
+            };
+          });
+
+          return {
+            ...defaultState,
+            owners: ownersWithSelections,
+            availableTeams: state?.availableTeams || []
+          };
+
+        } catch (err) {
+          console.error("Load error:", err);
+          return structuredClone(defaultState);
+        }
       }
+     */
+
+     async function loadStateFromDB() {
+
+      if (!db) {
+        console.warn("DB not ready yet ❌");
+        return { owners: [] };
+      }
+
+      const { data: owners } = await db.from("owners").select("*");
+      const { data: selections } = await db.from("selections").select("*");
+
+      const ownersWithSelections = (owners || []).map(owner => {
+
+        const selectionMap = {};
+        tiers.forEach(t => selectionMap[t.id] = blankTeam());
+
+        (selections || [])
+          .filter(s => s.owner_slug === owner.slug)
+          .forEach(s => {
+            selectionMap[s.tier] = {
+              id: s.team_id,
+              name: s.team_name,
+              crest: s.team_crest
+            };
+          });
+
+        return {
+          ...owner,
+          selections: selectionMap
+        };
+      });
+
+      return { owners: ownersWithSelections };
+    }
+
+    function startPolling() {
+
+      setInterval(async () => {
+
+        const newState = await loadStateFromDB();
+        
+        state = {
+          ...state,                 // ✅ keep API data (points, results, teams)
+          owners: newState.owners   // ✅ ONLY overwrite DB-backed data
+        };
+
+        render();
+
+      }, 5000);
+
     }
 
     function migrateState(saved) {
       if (!saved.owners || !saved.fixtures) return structuredClone(defaultState);
       saved.api = { ...defaultState.api, ...(saved.api || {}) };
+      if (!saved.api.competition) {
+        saved.api.competition = saved.api.league === "1" ? "WC" : (saved.api.league || "WC");
+      }
+      delete saved.api.league;
       saved.availableTeams = saved.availableTeams?.length ? saved.availableTeams : structuredClone(sampleTeams);
       saved.owners = saved.owners.map((owner, index) => ({
         ...owner,
@@ -899,14 +1166,54 @@
     }
 
     function saveState() {
-      localStorage.setItem(storageKey, JSON.stringify(state));
+      // localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+    
+    async function saveOwnersToDB(newOwnerOnly) {
+      
+    if (!newOwnerOnly) return;
+
+      await db.from("owners").upsert({
+        slug: newOwnerOnly.id,
+        name: newOwnerOnly.name,
+        color: newOwnerOnly.color
+      }, {
+        onConflict: "slug"
+      });
+
+    }
+
+    async function saveSelection(ownerSlug, tierId, team) {
+
+      console.log("SAVE SELECTION CALLED:", ownerSlug, tierId, team);
+
+      const { data, error } = await db.from("selections").upsert({
+        owner_slug: ownerSlug,
+        tier: tierId,
+        team_id: team?.id || null,
+        team_name: team?.name || null,
+        team_crest: team?.crest || null
+      }, {
+        onConflict: "owner_slug,tier"
+      });
+
+      console.log("SAVE RESULT:", data, error);
+
+      if (error) {
+        console.error("❌ SELECTION ERROR:", error.message, error);
+      }
     }
 
     function todayKey(date = new Date()) {
-      return date.toLocaleDateString("en-CA");
+      return date.toLocaleDateString("en-GB");
     }
 
     function ensureRequestLog() {
+     
+      if (!state.api) {
+          state.api = {};
+        }
+
       if (!state.api.requestLog || state.api.requestLog.date !== todayKey()) {
         state.api.requestLog = { date: todayKey(), count: 0 };
       }
@@ -1001,12 +1308,26 @@
     function normalizeStage(stage) {
       const s = String(stage || "").toLowerCase();
 
-      if (s.includes("last_16")) return "round16";
+      if (s.includes("last_32") || s.includes("round of 32") || s.includes("1/16")) return "round32";
+      if (s.includes("last_16") || s.includes("round of 16") || s.includes("1/8")) return "round16";
       if (s.includes("quarter")) return "quarter";
       if (s.includes("semi")) return "semi";
       if (s.includes("final")) return "final";
 
       return "group";
+    }
+
+    function formatStage(stage) {
+      const labels = {
+        GROUP_STAGE: "Group Stage",
+        LAST_32: "Round of 32",
+        LAST_16: "Round of 16",
+        QUARTER_FINALS: "Quarter-finals",
+        SEMI_FINALS: "Semi-finals",
+        FINAL: "Final",
+        THIRD_PLACE: "Third place"
+      };
+      return labels[stage] || String(stage || "").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
     }
 
     function isComplete(fixtureItem) {
@@ -1033,7 +1354,10 @@
 
     function scoreTeam(team, tier, fixtures = state.fixtures) {
       if (!team?.id) return { total: 0, match: 0, bonus: 0, details: [] };
-      const relevant = fixtures.filter(item => isComplete(item) && fixtureIncludesTeam(item, team.id));
+
+      const safeFixtures = fixtures || []; 
+
+      const relevant = safeFixtures.filter(item => isComplete(item) && fixtureIncludesTeam(item, team.id));
       let match = 0;
       let bonus = 0;
       const flags = { round32: false, round16: false, quarterWin: false, semiWin: false, champion: false, runnerUp: false };
@@ -1060,11 +1384,17 @@
     }
 
     function ownerRows(fixtures = state.fixtures) {
+      
+      if (!Array.isArray(state.owners)) {
+        return [];
+      }
+
       return state.owners.map(owner => {
         const contributions = tiers.map(tier => {
-          const team = owner.selections[tier.id] || blankTeam();
-          const score = scoreTeam(team, tier, fixtures);
-          return { tier, team, ...score };
+          const team = owner.selections?.[tier.id];
+          const safeTeam = team || {id: null };
+          const score = scoreTeam(safeTeam, tier, fixtures);
+          return { tier, team: safeTeam, ...score };
         });
         const points = contributions.reduce((total, item) => total + item.total, 0);
         return { ...owner, contributions, points };
@@ -1084,25 +1414,45 @@
     }
 
     function render() {
+
+      if (!state || !state.owners) {
+          console.warn("render skipped — state not ready");
+          return;
+      }
+
       renderMetrics();
       renderStandings();
+      renderLeagueCards();
       renderOwners();
       renderRules();
       renderMatches();
-      renderSelects();
+      //renderSelects();
       renderApi();
       renderHistory();
-      saveState();
+      //saveState();
     }
 
     function renderMetrics() {
+
+      if (!state || !Array.isArray(state.owners)) {
+        console.warn("renderMetrics skipped — state not ready");
+        return;
+      }
+
       const rows = ownerRows();
+
+      if (!Array.isArray(rows)) return;
+
+      const rowsSafe = ownerRows() || [];
+      const filtered = rowsSafe.filter(row => row);
+
       const selectedCount = state.owners.reduce((total, owner) => total + tiers.filter(tier => owner.selections[tier.id]?.id).length, 0);
       document.getElementById("metricLeader").textContent = rows[0] ? rows[0].name : "-";
-      document.getElementById("metricMatches").textContent = state.fixtures.filter(isComplete).length;
+      //document.getElementById("metricMatches").textContent = state.fixtures.filter(isComplete).length;
+      document.getElementById("metricMatches").textContent = `${state.fixtures.filter(isComplete).length} / ${state.fixtures.length}`;
       document.getElementById("metricTeams").textContent = selectedCount;
       document.getElementById("lastUpdated").textContent = `Last synced: ${formatDateTime(state.api.lastSyncIso)}`;
-      document.getElementById("apiStatus").textContent = state.api.status || "Ready";
+      document.getElementById("apiStatus").textContent = status || "Ready";
     }
 
     function renderStandings() {
@@ -1110,15 +1460,37 @@
       document.getElementById("standingsBody").innerHTML = rows.map((owner, index) => `
         <tr>
           <td><span class="rank">${index + 1}</span></td>
+
           <td><span class="owner-name">${owner.name}</span></td>
-          <td><span class="tier-list">${owner.contributions.map(item => `
-            <span class="pill tier-pill"><strong>${item.tier.label}</strong>: ${item.team.name || "Empty"}</span>
-          `).join("")}</span></td>
+
+          ${owner.contributions.map(item => `
+            <td>
+              ${item.team?.name ? `
+                <div class="pill" style="display:flex;align-items:center;gap:6px;">                 
+                ${item.team?.crest 
+                  ? `<img src="${item.team.crest}" class="team-flag">`
+                  : ""
+                }
+                ${item.team.name}
+                </div>
+              ` : `<span class="muted-row">Empty</span>`}
+            </td>
+          `).join("")}
           <td><span class="score">${formatPoints(owner.points)}</span></td>
         </tr>
+
       `).join("");
 
       const leader = rows[0];
+
+      const titleEl = document.getElementById("teamContributionTitle");
+
+      if (titleEl) {
+        titleEl.textContent = leader
+          ? `Team Contribution (1st: ${leader.name})`
+          : "Team Contribution";
+      }
+
       if (!leader) {
         document.getElementById("projectionBars").innerHTML = `<div class="empty">Add players to begin.</div>`;
         return;
@@ -1131,6 +1503,76 @@
           <div class="track"><div class="fill" style="width:${Math.max(4, item.total / maxContribution * 100)}%; background:${leader.color}"></div></div>
         </div>
       `).join("");
+
+        const contributionTitle = document.querySelector(".panel-header h3");
+
+        if (contributionTitle && leader) {
+          //contributionTitle.textContent = `Team Contribution (${leader.name})`;
+          contributionTitle.textContent = 'Live Standings';
+        }
+    }
+
+    function formatPosition(n) {
+      const suffixes = ["th", "st", "nd", "rd"];
+      const v = n % 100;
+      return n + (suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]);
+    }
+
+    function renderLeagueCards() {
+
+      const rows = ownerRows();
+
+      const container = document.getElementById("leagueCards");
+      if (!container) return;
+
+      container.innerHTML = "";
+
+      if (!rows || !rows.length) {
+        container.innerHTML = `<div class="empty">No standings yet</div>`;
+        return;
+      }
+
+      rows.forEach((owner, index) => {
+
+        const card = document.createElement("div");
+        card.className = "league-card";
+
+        card.innerHTML = `
+          <h3>
+            <span class="rank">${formatPosition(index + 1)}</span>
+            ${owner.name}
+          </h3>
+
+          ${owner.contributions.map(item => `
+            <div class="card-row">
+              <span>${item.tier.label}</span>
+              <span>
+                ${           
+                  item.team?.name
+                      ? `
+                        <div style="display:flex;align-items:center;gap:6px;">
+                          ${item.team.crest 
+                            ? `<img src="${item.team.crest}" class="team-flag">`
+                            : ""
+                          }
+                          ${item.team.name}
+                        </div>
+                      `
+                      : `<span class="muted-row">Empty</span>`
+                }
+              </span>
+            </div>
+          `).join("")}
+     
+          <div class="points">
+            <span class="points-value">
+              ${formatPoints(owner.points)} pts
+            </span>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
     }
 
     function renderOwners() {
@@ -1140,6 +1582,7 @@
             <strong>${owner.name}</strong>
             <div class="tier-list" style="margin-top:8px">${tiers.map(tier => {
               const team = owner.selections[tier.id] || blankTeam();
+              //console.log("Selections after update:",owner.selections);
               return `<span class="pill tier-pill"><strong>${tier.label}</strong>: ${team.name || "Empty"}</span>`;
             }).join("")}</div>
           </div>
@@ -1188,31 +1631,115 @@
     }
 
     function renderMatches() {
-    const completed = state.fixtures.filter(isComplete);
+      const completed = state.fixtures.filter(isComplete);
+      //const latest = completed[completed.length - 1];
+      const impactList = document.getElementById("impactList");
 
-    document.getElementById("matchList").innerHTML =
-      completed.map(item => `
+      /* if (!latest) {
+        impactList.innerHTML = `<div class="empty">Sync or load results to see who gained points.</div>`;
+      } else {
+        const impacts = matchImpact(latest);
+        impactList.innerHTML = `
+          <div class="impact-item">
+            <div>
+              <strong style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              ${
+                latest.home?.crest
+                  ? `<img src="${latest.home.crest}" class="team-flag">`
+                  : `<img src="https://crests.football-data.org/${latest.home.id}.svg" class="team-flag">`
+              }
+
+              ${latest.home.name}
+
+              ${latest.homeGoals}-${latest.awayGoals}
+
+              ${latest.away.name}
+
+              ${
+                latest.away?.crest
+                  ? `<img src="${latest.away.crest}" class="team-flag">`
+                  : `<img src="https://crests.football-data.org/${latest.away.id}.svg" class="team-flag">`
+              }
+            </strong>
+              <div class="muted-row">${formatStage(latest.stage)}</div>
+            </div>
+            <span class="pill">Latest</span>
+          </div>
+          ${impacts.map(item => `
+            <div class="impact-item">
+              <div>
+                <strong>${item.owner.name}</strong>
+                <div class="muted-row">${item.teams.join(", ")}</div>
+              </div>
+              <span class="score">+${formatPoints(item.points)}</span>
+            </div>
+          `).join("") || `<div class="empty">No selected teams in this fixture.</div>`}
+        `;
+      } */
+     if (!completed.length) {
+        impactList.innerHTML = `<div class="empty">No results yet.</div>`;
+        return;
+      }
+
+      const recentMatches = completed.slice(-3).reverse(); // newest first
+
+      impactList.innerHTML = recentMatches.map(match => {
+
+        const impacts = matchImpact(match);
+
+        return `
+          <div class="impact-item">
+            <div>
+              <strong style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                
+                ${match.home?.crest ? `<img src="${match.home.crest}" class="team-flag">` : ""}
+                ${match.home.name}
+
+                ${match.homeGoals}-${match.awayGoals}
+
+                ${match.away.name}
+                ${match.away?.crest ? `<img src="${match.away.crest}" class="team-flag">` : ""}
+                
+              </strong>
+
+              <div class="muted-row">${formatStage(match.stage)}</div>
+            </div>
+          </div>
+
+          ${impacts.map(item => `
+            <div class="impact-item">
+              <div>
+                <strong>${item.owner.name}</strong>
+                <div class="muted-row">${item.teams.join(", ")}</div>
+              </div>
+              <span class="score">+${formatPoints(item.points)}</span>
+            </div>
+          `).join("")}
+
+        `;
+      }).join("");
+
+      document.getElementById("matchList").innerHTML = completed.map(item => `
         <div class="match-row">
           <div>
-            <strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
-            <div class="muted-row">${item.stage}</div>
+            <strong style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              ${item.home?.crest ? `<img src="${item.home.crest}" class="team-flag">` : ""} 
+              ${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}
+              ${item.away?.crest ? `<img src="${item.away.crest}" class="team-flag">` : ""}
+            </strong>
+            <div class="muted-row">${formatStage(item.stage)}${item.utcDate ? " / " + new Date(item.utcDate).toLocaleString() : ""}</div>
           </div>
           <span class="pill">${displayStatus(item.status)}</span>
         </div>
       `).join("") || `<div class="empty">No completed fixtures yet.</div>`;
-
-        document.getElementById("matchList").innerHTML = completed.map(item => `
-          <div class="match-row">
-            <div>
-              <strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
-              <div class="muted-row">${item.stage} ${item.utcDate ? " / " + new Date(item.utcDate).toLocaleString() : ""}</div>
-            </div>
-            <span class="pill">${item.status}</span>
-          </div>
-        `).join("") || `<div class="empty">No completed fixtures yet.</div>`;
     }
 
     function renderSelects() {
+
+      const currentOwner = document.getElementById("teamOwner").value;
+      const currentTier = document.getElementById("teamTier").value;
+      const currentTeam = document.getElementById("teamSelect").value;
+
       document.getElementById("teamOwner").innerHTML = state.owners.map(owner => `<option value="${owner.id}">${owner.name}</option>`).join("");
       document.getElementById("teamTier").innerHTML = tiers.map(tier => `<option value="${tier.id}">${tier.label}</option>`).join("");
       renderTeamOptions();
@@ -1222,7 +1749,7 @@
       const ownerId = document.getElementById("teamOwner").value;
       const tierId = document.getElementById("teamTier").value;
       const unavailable = selectedTeamKeys(ownerId, tierId);
-      const current = state.owners.find(owner => owner.id === ownerId)?.selections[tierId];
+      const current = state.owners.find(owner => String(owner.id) === String(ownerId))?.selections[tierId];
       document.getElementById("teamSelect").innerHTML = [
         `<option value="">Empty</option>`,
         ...state.availableTeams.map(team => {
@@ -1235,7 +1762,7 @@
     }
 
     function renderApi() {
-      document.getElementById("apiLeague").value = state.api.league || "1";
+      document.getElementById("apiCompetition").value = state.api.competition || "WC";
       document.getElementById("apiSeason").value = state.api.season || "2026";
       document.getElementById("autoSyncEnabled").checked = state.api.autoSync !== false;
       const remaining = requestsRemainingToday();
@@ -1243,7 +1770,8 @@
 
       document.getElementById("apiSummary").innerHTML = `
         <div class="api-row"><strong>Status</strong><span class="pill">${state.api.status || "Ready"}</span></div>
-        <div class="api-row"><strong>API key</strong><span class="pill">Stored in Netlify</span></div>
+        <div class="api-row"><strong>API token</strong><span class="pill">Stored in Netlify</span></div>
+        <div class="api-row"><strong>Competition</strong><span class="pill">${state.api.competition || "WC"}</span></div>
         <div class="api-row"><strong>Last synced</strong><span class="pill">${formatDateTime(state.api.lastSyncIso)}</span></div>
         <div class="api-row"><strong>Requests today</strong><span class="score">${requestsUsedToday()}/${apiDailyLimit}</span></div>
         <div class="api-row"><strong>Requests remaining</strong><span class="score">${remaining}</span></div>
@@ -1260,7 +1788,9 @@
 
     function renderHistory() {
       const svg = document.getElementById("historyChart");
-      const width = 900;
+      const width = 1000;
+      const labelOffset = 30;
+      const chartWidth = width * 0.95;
       const height = 260;
       const pad = 34;
       const completed = state.fixtures.filter(isComplete);
@@ -1273,8 +1803,11 @@
 
       const snapshots = completed.map((_, index) => ownerRows(completed.slice(0, index + 1)));
       const maxRank = Math.max(state.owners.length, 1);
-      const stepX = snapshots.length === 1 ? 0 : (width - pad * 2) / (snapshots.length - 1);
+      const stepX = snapshots.length === 1 ? 0 : (chartWidth - pad * 2) / (snapshots.length - 1);
       const stepY = maxRank === 1 ? 0 : (height - pad * 2) / (maxRank - 1);
+
+      //console.log("Fixtures count:", state.fixtures.length);
+      //console.log("Completed:", state.fixtures.filter(isComplete).length);
 
       const grid = Array.from({ length: maxRank }, (_, index) => {
         const y = pad + index * stepY;
@@ -1292,174 +1825,218 @@
       const labels = state.owners.map(owner => {
         const finalSnapshot = snapshots[snapshots.length - 1];
         const rank = finalSnapshot.findIndex(row => row.id === owner.id) + 1;
-        return `<text x="${width - pad + 8}" y="${pad + (rank - 1) * stepY + 5}" fill="${owner.color}" font-size="13" font-weight="700">${owner.name}</text>`;
+        return `<text x="${width - (pad + labelOffset)}" y="${pad + (rank - 1) * stepY + 5}" fill="${owner.color}" font-size="13" font-weight="700">${owner.name}</text>`;
       }).join("");
 
       svg.innerHTML = `${grid}${lines}${labels}`;
     }
 
     function updateApiStatus(status) {
+      
+      if(!state) return;
+
+      if (!state.api) {
+        state.api = {};
+      }
+
+      state.api.status = "loading";
       state.api.status = status;
-      render();
+
+      //render();
     }
 
-    async function fetchApi(kind) {
+    async function parseFunctionResponse(response) {
+      const text = await response.text();
+      const trimmed = text.trim();
+
+      if (trimmed.startsWith("<")) {
+        throw new Error(
+          "Received HTML instead of JSON from /.netlify/functions/football-data. " +
+          "Run with 'npm run dev' locally or redeploy the site so Netlify Functions are available."
+        );
+      }
+
+      try {
+        return JSON.parse(trimmed || "{}");
+      } catch {
+        throw new Error("Netlify function returned invalid JSON.");
+      }
+    }
+
+    async function fetchApi(kind, options = {}) {
       if (window.location.protocol === "file:") {
-        throw new Error("Run in Netlify or Netlify Dev for live API.");
+        throw new Error("Live sync needs the Netlify app URL or Netlify Dev. This local file preview can only use sample data.");
       }
 
       const params = new URLSearchParams({
         kind,
-        competition: state.api.league || "WC"
+        competition: state.api.competition || "WC"
       });
 
-      /*const response = await fetch(`/.netlify/functions/api-football?${params}`);
+      const season = (state.api.season || "").trim();
+      if (season && !options.skipSeason) params.set("season", season);
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "API error");
+      const response = await fetch(`/.netlify/functions/football-data?${params.toString()}`);
+
+      if (response.status === 404) {
+        throw new Error("Netlify Function not found. Deploy the whole folder to Netlify, or run with Netlify Dev locally.");
+      }
+    
+      if (["teams", "matches"].includes(kind)) {
+        options.skipSeason = true;
       }
 
-      const data = await response.json();
-
+      const data = await parseFunctionResponse(response);
+      if (!response.ok) throw new Error(data.error || `API request failed: ${response.status}`);
+      if (data.error) throw new Error(data.error);
       recordApiRequest();
-      saveState();
+      //saveState();
+      return data;
+    }
 
-      return data; // 
-      */
+    async function testApiConnection() {
+      updateApiStatus("Testing connection...");
 
-    const response = await fetch(url.toString(), {
-      headers: {
-        "X-Auth-Token": apiKey
+      try {
+        const data = await fetchApi("competition", { skipSeason: true });
+        const name = data.name || state.api.competition || "WC";
+        updateApiStatus(`Connected to football-data.org (${name})`);
+      } catch (error) {
+        updateApiStatus(error.message);
       }
-    });
-
-    const text = await response.text();
-
-    let payload;
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      return json(500, {
-        error: "Upstream API did not return JSON",
-        snippet: text.slice(0, 200) // <-- VERY IMPORTANT
-      });
-    }
-
-    if (!response.ok) {
-      return json(response.status, {
-        error: payload?.message || "API error"
-      });
-    }
-
-    return json(200, payload);
-
     }
 
     async function syncTeamsFromApi() {
       updateApiStatus("Syncing teams...");
 
       try {
-        const data = await fetchApi("teams");
+
+        console.log("Starting teams fetch");
+
+        const data = await fetchApi("teams", {skipSeason: true});
+
+        console.log("API returned: ", data);
+
+        console.log("API teams:", data);
 
         state.availableTeams = (data.teams || [])
           .map(team => ({
             id: team.id,
-            name: team.name
+            name: team.name,
+            crest: team.crest || `https://crests.football-data.org/${team.id}.svg`
           }))
           .sort((a, b) => a.name.localeCompare(b.name));
 
         updateApiStatus(`Synced ${state.availableTeams.length} teams`);
 
       } catch (err) {
+        console.error("Teams error: ", err);
         updateApiStatus(err.message);
       }
+      if (!state) return;
 
-      render();
+      //render();
     }
 
 
+    
     
     async function syncFixturesFromApi(options = {}) {
       updateApiStatus(options.automatic ? "Auto-syncing..." : "Syncing fixtures...");
 
       try {
-        const data = await fetchApi("matches");
+        console.log("👉 Starting fixtures fetch");
 
-        state.fixtures = (data.matches || []).map(match => ({
-          id: match.id,
-          stage: match.stage || match.group || "",
+        const data = await fetchApi("matches", {skipSeason: true});  // ✅ FIRST define it
 
-          utcDate: match.utcDate || null,
-          status: match.status,
+        console.log("✅ Match API returned:", data); // ✅ THEN use it
 
-          home: {
-            id: match.homeTeam.id,
-            name: match.homeTeam.name
-          },
-          away: {
-            id: match.awayTeam.id,
-            name: match.awayTeam.name
-          },
+        state.fixtures = (data.matches || [])
+          .filter(match => match.homeTeam?.id && match.awayTeam?.id)
+          .map(match => ({
+            id: match.id,
+            stage: match.stage || match.group || "",
+            utcDate: match.utcDate || null,
+            status: match.status,
 
-          homeGoals: match.score?.fullTime?.home ?? null,
-          awayGoals: match.score?.fullTime?.away ?? null
-        }));
+            home: {
+              id: match.homeTeam.id,
+              name: match.homeTeam.name,
+              crest: match.homeTeam.crest
+            },
+            away: {
+              id: match.awayTeam.id,
+              name: match.awayTeam.name,
+              crest: match.awayTeam.crest
+            },
+
+            homeGoals: match.score?.fullTime?.home ?? null,
+            awayGoals: match.score?.fullTime?.away ?? null
+          }));
 
         state.api.lastSyncIso = new Date().toISOString();
+
         state.api.status =
-          `Synced ${state.fixtures.filter(isComplete).length} completed matches`;
+          `✅ Synced ${state.fixtures.length} matches (${state.fixtures.filter(isComplete).length} completed)`;
 
       } catch (err) {
+        console.error("❌ Match sync error:", err);
         state.api.status = err.message;
       }
 
-      scheduleAutoSync();
+      //scheduleAutoSync();
       render();
     }
 
-    function scheduleAutoSync() {
-      if (autoSyncTimer) {
-        clearTimeout(autoSyncTimer);
-        autoSyncTimer = null;
-      }
 
-      if (state.api.autoSync === false || requestsRemainingToday() <= 0) {
-        state.api.nextAutoSync = "";
-        saveState();
-        return;
-      }
+        function scheduleAutoSync() {
+          
+          if (!state || !state.api) {
+            console.warn("Skipping auto sync — state not ready");
+            return;
+          }
 
-      const window = matchWindowForDate();
-      if (!window) {
-        state.api.nextAutoSync = "";
-        saveState();
-        return;
-      }
+          if (autoSyncTimer) {
+            clearTimeout(autoSyncTimer);
+            autoSyncTimer = null;
+          }
 
-      const now = new Date();
-      if (now > window.end) {
-        state.api.nextAutoSync = "";
-        saveState();
-        return;
-      }
+          if (state.api.autoSync === false || requestsRemainingToday() <= 0) {
+            state.api.nextAutoSync = "";
+            //saveState();
+            return;
+          }
 
-      const delay = now < window.start
-        ? window.start.getTime() - now.getTime()
-        : autoSyncIntervalMs(now);
+          const window = matchWindowForDate();
+          if (!window) {
+            state.api.nextAutoSync = "";
+            //saveState();
+            return;
+          }
 
-      state.api.nextAutoSync = new Date(now.getTime() + delay).toISOString();
-      saveState();
+          const now = new Date();
+          if (now > window.end) {
+            state.api.nextAutoSync = "";
+            //saveState();
+            return;
+          }
 
-      autoSyncTimer = setTimeout(async () => {
-        if (state.api.autoSync !== false && isInsideMatchWindow() && requestsRemainingToday() > 0) {
-          await syncFixturesFromApi({ automatic: true });
-        } else {
-          scheduleAutoSync();
-          render();
+          const delay = now < window.start
+            ? window.start.getTime() - now.getTime()
+            : autoSyncIntervalMs(now);
+
+          state.api.nextAutoSync = new Date(now.getTime() + delay).toISOString();
+          //saveState();
+       
+          autoSyncTimer = setTimeout(async () => {
+            if (state.api.autoSync !== false && isInsideMatchWindow() && requestsRemainingToday() > 0) {
+              await syncFixturesFromApi({ automatic: true });
+            } else {
+              scheduleAutoSync();
+              render();
+            }
+          }, delay);
         }
-      }, delay);
-    }
 
     document.querySelectorAll(".tab-button").forEach(button => {
       button.addEventListener("click", () => {
@@ -1471,48 +2048,118 @@
       });
     });
 
-    document.getElementById("ownerForm").addEventListener("submit", event => {
-      event.preventDefault();
-      const nameInput = document.getElementById("ownerName");
-      const name = nameInput.value.trim();
-      if (!name) return;
-      const id = slugify(name);
-      if (state.owners.some(owner => owner.id === id)) return;
-      state.owners.push({
-        id,
-        name,
-        color: colors[state.owners.length % colors.length],
-        selections: {
-          elite: blankTeam(),
-          challenger: blankTeam(),
-          midTier: blankTeam(),
-          longshot: blankTeam(),
-          underdog: blankTeam()
+    document.addEventListener("DOMContentLoaded", () => {
+    
+      document.getElementById("ownerForm").addEventListener("submit", async event => {
+        event.preventDefault();
+
+        console.log("FORM SUBMITTED");
+
+        const nameInput = document.getElementById("ownerName");
+        const name = nameInput.value.trim();
+        if (!name) return;
+
+        const id = slugify(name);
+
+        // ✅ Declare FIRST
+        const newOwner = {
+          id,
+          name,
+          color: colors[state.owners.length % colors.length]
+        };
+
+        console.log("About to insert:", newOwner);
+
+        // ✅ THEN use it
+        const { data, error } = await db.from("owners").upsert({
+          slug: newOwner.id,
+          name: newOwner.name,
+          color: newOwner.color
+        }, {
+          onConflict: "slug"
+        });
+
+        console.log("INSERT RESULT:", data, error);
+
+        if (error) return;
+
+        nameInput.value = "";
+
+        // ✅ Reload from DB after save
+        state = await loadStateFromDB();
+        render();
+      });
+
+      
+      document.getElementById("teamForm").addEventListener("submit", async event => {
+        event.preventDefault();
+
+        try {
+
+          const ownerValue = document.getElementById("teamOwner").value;
+          const tierId = document.getElementById("teamTier").value;
+          const selectedId = document.getElementById("teamSelect").value;
+
+          console.log("FORM VALUES:", ownerValue, tierId, selectedId);
+
+          // ✅ Step 1: find owner
+          const owner = state.owners.find(o => String(o.id) === String(ownerValue));
+
+          console.log("FOUND OWNER:", owner);
+
+          if (!owner) {
+            console.error("❌ OWNER NOT FOUND");
+            return;
+          }
+
+          // ✅ Step 2: find team
+          let team = null;
+
+          if (selectedId) {
+            const apiTeam = state.availableTeams.find(t => String(t.id) === String(selectedId));
+
+            console.log("FOUND TEAM:", apiTeam);
+
+            if (apiTeam) {
+              team = {
+
+                id: apiTeam.id,
+                name: apiTeam.name,
+                crest: apiTeam.crest
+              };
+            }
+          }
+
+          // ✅ Step 3: update state
+          owner.selections[tierId] = team || blankTeam();
+
+          console.log("UPDATED STATE ✅", owner.selections[tierId]);
+
+          // ✅ Step 4: SAVE
+          console.log("CALLING SAVE ✅");
+
+          await saveSelection(owner.slug, tierId, team);
+
+          // ✅ Step 5: refresh
+          const dbState = await loadStateFromDB();
+
+          state = {
+            ...state,
+            owners: dbState.owners
+          };
+
+          render();
+
+        } catch (err) {
+          console.error("❌ TEAM FORM ERROR:", err);
         }
       });
-      nameInput.value = "";
-      render();
-    });
 
-    document.getElementById("teamForm").addEventListener("submit", event => {
-      event.preventDefault();
-      const ownerId = document.getElementById("teamOwner").value;
-      const tierId = document.getElementById("teamTier").value;
-      const selectedId = document.getElementById("teamSelect").value;
-      const owner = state.owners.find(item => item.id === ownerId);
-      if (!owner) return;
-      if (!selectedId) {
-        owner.selections[tierId] = blankTeam();
-      } else if (!selectedTeamKeys(ownerId, tierId).has(String(selectedId))) {
-        const apiTeam = state.availableTeams.find(team => String(team.id) === String(selectedId));
-        if (apiTeam) owner.selections[tierId] = { id: apiTeam.id, name: apiTeam.name };
-      }
-      render();
     });
 
     document.getElementById("apiForm").addEventListener("submit", event => {
       event.preventDefault();
-      state.api.league = document.getElementById("apiLeague").value.trim() || "1";
+      state.api.competition = document.getElementById("apiCompetition").value.trim() || "WC";
       state.api.season = document.getElementById("apiSeason").value.trim() || "2026";
       state.api.autoSync = document.getElementById("autoSyncEnabled").checked;
       state.api.status = "Settings saved";
@@ -1525,26 +2172,28 @@
     document.getElementById("syncTeams").addEventListener("click", syncTeamsFromApi);
     document.getElementById("syncFixtures").addEventListener("click", () => syncFixturesFromApi());
     document.getElementById("syncFixturesPanel").addEventListener("click", () => syncFixturesFromApi());
-    document.getElementById("testApi").addEventListener("click", syncTeamsFromApi);
+    document.getElementById("testApi").addEventListener("click", testApiConnection);
     document.getElementById("autoSyncEnabled").addEventListener("change", event => {
       state.api.autoSync = event.target.checked;
       state.api.status = event.target.checked ? "Auto-sync enabled" : "Auto-sync paused";
-      scheduleAutoSync();
+      //scheduleAutoSync();
       render();
     });
 
     document.getElementById("loadSampleFixtures").addEventListener("click", () => {
-      state.availableTeams = structuredClone(sampleTeams);
-      state.fixtures = structuredClone(sampleFixtures);
+      //state.availableTeams = structuredClone(sampleTeams);
+      //state.fixtures = structuredClone(sampleFixtures);
+      state.availableTeams = [];
+      state.fixtures = [];
       state.api.status = "Sample data loaded";
-      scheduleAutoSync();
+      //scheduleAutoSync();
       render();
     });
 
     document.getElementById("clearFixtures").addEventListener("click", () => {
       state.fixtures = [];
       state.api.status = "Results cleared";
-      scheduleAutoSync();
+      //scheduleAutoSync();
       render();
     });
 
@@ -1557,7 +2206,7 @@
 
     document.getElementById("resetDemo").addEventListener("click", () => {
       state = structuredClone(defaultState);
-      scheduleAutoSync();
+      //scheduleAutoSync();
       render();
     });
 
@@ -1571,8 +2220,22 @@
       URL.revokeObjectURL(url);
     });
 
-    scheduleAutoSync();
-    render();
+    //render();
+
+    /* setInterval(async () => {
+      const newState = await loadStateFromDB();
+
+      if (JSON.stringify(newState.owners) !== JSON.stringify(state.owners)) {
+        state = newState;
+        render();
+      }
+    }, 5000);
+    */
+
+    //scheduleAutoSync();
+
+    // Updated: Thu 18 Jun 2026 1700 UTC
+    
   </script>
 </body>
 </html>
