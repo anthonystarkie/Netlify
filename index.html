@@ -95,9 +95,9 @@
     }
 
     .team-flag {
-      width: 16px;
-      height: 12px;
-      object-fit: cover;
+      width: 18px;
+      height: auto;
+      object-fit: contain;
       border-radius: 2px;
       vertical-align: middle;
       box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
@@ -463,6 +463,67 @@
       background: rgba(36, 98, 168, 0.07);
     }
 
+    /* Hide cards on desktop */
+    .league-cards {
+      display: none;
+    }
+
+    #leagueTable,
+    .league-cards {
+      transition: all 0.3s ease;
+    }
+
+    /* Mobile view */
+    @media (max-width: 768px) {
+
+      /* Hide table */
+      #leagueTable {
+        display: none !important; /* Force hide */
+      }
+
+      /* Show cards */
+      .league-cards {
+        display: block;
+      }
+
+      .league-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      }
+
+      .league-card h3 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+
+      .card-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+      
+      .points {
+        display: flex;
+        justify-content: flex-end; /* ✅ aligns right */
+        font-weight: bold;
+        margin-top: 8px;
+      }
+
+      .points-value {
+        text-align: right;
+      }
+
+      .team-flag {
+          width: 16px;
+      }
+
+    }
+
+
     @media (max-width: 1100px) {
       .tier-list {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -579,7 +640,7 @@
               <span class="pill" id="lastUpdated">Ready</span>
             </div>
             <div class="panel-body" style="padding:0">
-              <table>
+              <table id="leagueTable">
                 <thead>
                   <tr>
                     <th>Rank</th>
@@ -595,6 +656,7 @@
                 <tbody id="standingsBody"></tbody>
               </table>
             </div>
+            <div id="leagueCards" class="league-cards"></div>
           </div>
 
           <div class="panel span-4">
@@ -1312,6 +1374,7 @@
     function render() {
       renderMetrics();
       renderStandings();
+      renderLeagueCards();
       renderOwners();
       renderRules();
       renderMatches();
@@ -1344,8 +1407,8 @@
             <td>
               ${item.team?.name ? `
                 <div class="pill" style="display:flex;align-items:center;gap:6px;">                 
-                ${item.team.flag 
-                  ? `<img src="${item.team.flag}" class="team-flag">`
+                ${item.team.emblem 
+                  ? `<img src="${item.team.emblem}" class="team-flag">`
                   : ""
                 }
                 ${item.team.name}
@@ -1384,8 +1447,72 @@
         const contributionTitle = document.querySelector(".panel-header h3");
 
         if (contributionTitle && leader) {
-          contributionTitle.textContent = `Team Contribution (${leader.name})`;
+          //contributionTitle.textContent = `Team Contribution (${leader.name})`;
+          contributionTitle.textContent = 'Live Standings';
         }
+    }
+
+    function formatPosition(n) {
+      const suffixes = ["th", "st", "nd", "rd"];
+      const v = n % 100;
+      return n + (suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]);
+    }
+
+    function renderLeagueCards() {
+
+      const rows = ownerRows();
+
+      const container = document.getElementById("leagueCards");
+      if (!container) return;
+
+      container.innerHTML = "";
+
+      if (!rows || !rows.length) {
+        container.innerHTML = `<div class="empty">No standings yet</div>`;
+        return;
+      }
+
+      rows.forEach((owner, index) => {
+
+        const card = document.createElement("div");
+        card.className = "league-card";
+
+        card.innerHTML = `
+          <h3>
+            <span class="rank">${formatPosition(index + 1)}</span>
+            ${owner.name}
+          </h3>
+
+          ${owner.contributions.map(item => `
+            <div class="card-row">
+              <span>${item.tier.label}</span>
+              <span>
+                ${           
+                  item.team?.name
+                      ? `
+                        <div style="display:flex;align-items:center;gap:6px;">
+                          ${item.team.emblem 
+                            ? `<img src="${item.team.emblem}" class="team-flag">`
+                            : ""
+                          }
+                          ${item.team.name}
+                        </div>
+                      `
+                      : `<span class="muted-row">Empty</span>`
+                }
+              </span>
+            </div>
+          `).join("")}
+     
+          <div class="points">
+            <span class="points-value">
+              ${formatPoints(owner.points)} pts
+            </span>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
     }
 
     function renderOwners() {
@@ -1647,11 +1774,13 @@
 
         console.log("API returned: ", data);
 
+        console.log("API teams:", data);
+
         state.availableTeams = (data.teams || [])
           .map(team => ({
             id: team.id,
             name: team.name,
-            flag: team.area?.flag || team.crest || ""
+            crest: team.crest || team.crest || ""
           }))
           .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -1841,8 +1970,10 @@
 
             if (apiTeam) {
               team = {
+
                 id: apiTeam.id,
-                name: apiTeam.name
+                name: apiTeam.name,
+                crest: apiTeam.crest
               };
             }
           }
