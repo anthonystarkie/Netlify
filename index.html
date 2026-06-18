@@ -775,11 +775,35 @@
   </div>
 
   <script>
+    
+    async function loadConfig() {
+      const res = await fetch("/.netlify/functions/config");
 
-    const db = supabase.createClient(
-      process.env.SUPBASE_URL,
-      process.env.SUPABASE_KEY
-    );
+      if (!res.ok) {
+        throw new Error("Failed to load config");
+      }
+
+      return await res.json();
+    }
+    
+    let db;
+
+    async function initApp() {
+
+      const config = await loadConfig();
+
+      db = supabase.createClient(
+        config.SUPABASE_URL,
+        config.SUPABASE_KEY
+      );
+
+      state = await loadStateFromDB();
+      await syncTeamsFromApi();
+
+      render();
+    }
+
+    initApp();
 
     const tiers = [
       { id: "elite", label: "Elite", win: 1, draw: 0.5 },
