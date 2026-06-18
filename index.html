@@ -777,8 +777,8 @@
   <script>
 
     const db = supabase.createClient(
-      "https://dzalyvtewzjtyupbmjpj.supabase.co",
-      "sb_publishable_3biZ1jQFJPMK2tRvMgxVrQ_T1qJlTZ2"
+      process.env.SUPBASE_URL,
+      process.env.SUPABASE_KEY
     );
 
     const tiers = [
