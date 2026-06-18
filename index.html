@@ -212,12 +212,17 @@
       gap: 16px;
       align-items: start;
     }
-
+    .span-1 { grid-column: span 1; }
+    .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: span 3; }
     .span-4 { grid-column: span 4; }
     .span-5 { grid-column: span 5; }
     .span-6 { grid-column: span 6; }
     .span-7 { grid-column: span 7; }
     .span-8 { grid-column: span 8; }
+    .span-9 { grid-column: span 9; }
+    .span-10 { grid-column: span 10; }
+    .span-11 { grid-column: span 11; }
     .span-12 { grid-column: span 12; }
 
     .panel {
@@ -634,7 +639,7 @@
 
       <section class="section active" id="standings">
         <div class="grid">
-          <div class="panel span-8">
+          <div class="panel span-9">
             <div class="panel-header">
               <h3>Live Standings</h3>
               <span class="pill" id="lastUpdated">Ready</span>
@@ -659,7 +664,7 @@
             <div id="leagueCards" class="league-cards"></div>
           </div>
 
-          <div class="panel span-4">
+          <div class="panel span-3">
             <div class="panel-header">
               <h3 id="teamContributionTitle">Team Contribution</h3>
             </div>
@@ -848,8 +853,19 @@
       return await res.json();
     }
     
-    let db;
+    let db;    
+    let state = {
+      owners: [],
+      availableTeams: [],
+      fixtures: [],
+      api: {
+        status: null,
+        requestLog: []
+      }
+    };
 
+    
+    /*
     async function initApp() {
 
       const config = await loadConfig();
@@ -859,10 +875,51 @@
         config.SUPABASE_KEY
       );
 
+      console.log("DB value before load:", db);
+
+      console.log("✅ DB initialised");
+
       state = await loadStateFromDB();
+
       await syncTeamsFromApi();
 
       render();
+      renderSelects();
+
+      startPolling();
+    }
+    */
+
+    async function initApp() {
+      try {
+        const config = await loadConfig();
+
+        db = supabase.createClient(
+          config.SUPABASE_URL,
+          config.SUPABASE_KEY
+        );
+
+        console.log("✅ DB initialised");
+
+        // ✅ Load DB first
+        const dbState = await loadStateFromDB();
+
+        state = {
+          ...state,           // preserves api + teams
+          owners: dbState.owners || []
+        };
+
+        // ✅ THEN load API
+        await syncTeamsFromApi();
+
+        render();
+        renderSelects();
+
+        startPolling();
+
+      } catch (err) {
+        console.error("❌ INIT ERROR:", err);
+      }
     }
 
     initApp();
@@ -989,71 +1046,15 @@
     const postGameBufferMs = 2 * 60 * 60 * 1000;
     const minimumAutoSyncMs = 5 * 60 * 1000;
     let autoSyncTimer = null;
-    //let state = loadState();
 
-    /*function loadState() {
-      const saved = localStorage.getItem(storageKey);
-      if (!saved) return structuredClone(defaultState);
-      try {
-        return migrateState(JSON.parse(saved));
-      } catch {
-        return structuredClone(defaultState);
-      }
-    }
-    */
-
-    let state = structuredClone(defaultState);
-
-    /*
-    (async () => {
-      state = await loadStateFromDB();
-      render();
-    })();
-    */
-
-    /*
-    async function loadStateFromDB() {
-      const { data: owners, error } = await db
-        .from("owners")
-        .select("*");
-
-      if (error) {
-        console.error(error);
-        return structuredClone(defaultState);
-      }
-
-      const { data: selections } = await db
-        .from("selections")
-        .select("*");
-
-      const ownersWithSelections = owners.map(owner => {
-        const ownerSelections = selections.filter(s => s.owner_id === owner.id);
-
-        const selectionMap = {};
-        tiers.forEach(t => selectionMap[t.id] = blankTeam());
-
-        ownerSelections.forEach(s => {
-          selectionMap[s.tier] = {
-            id: s.team_id,
-            name: s.team_name
-          };
-        });
-
-        return {
-          ...owner,
-          selections: selectionMap
-        };
-      });
-
-       return {
-        ...defaultState,
-        owners: ownersWithSelections
-      };
-    }
-      */
-
-      async function loadStateFromDB() {
+     /* async function loadStateFromDB() {
         try {
+
+          if (!db) {
+              console.warn("DB not ready yet ❌");
+              return { owners: [], availableTeams: [] };
+            }
+
           const { data: owners } = await db.from("owners").select("*");
           const { data: selections } = await db.from("selections").select("*");
 
@@ -1066,7 +1067,8 @@
               .forEach(s => {
                 selectionMap[s.tier] = {
                   id: s.team_id,
-                  name: s.team_name
+                  name: s.team_name,
+                  crest: s.team_crest
                 };
               });
 
@@ -1087,33 +1089,58 @@
           return structuredClone(defaultState);
         }
       }
-     
-    
+     */
 
-    (async () => {
+     async function loadStateFromDB() {
 
-      console.log("loadStateFromDB =", loadStateFromDB);
+      if (!db) {
+        console.warn("DB not ready yet ❌");
+        return { owners: [] };
+      }
 
-      state = await loadStateFromDB();
+      const { data: owners } = await db.from("owners").select("*");
+      const { data: selections } = await db.from("selections").select("*");
 
-      // ✅ Load real API teams automatically
-      await syncTeamsFromApi();
+      const ownersWithSelections = (owners || []).map(owner => {
 
-      render();
+        const selectionMap = {};
+        tiers.forEach(t => selectionMap[t.id] = blankTeam());
 
-      // ✅ polling (multi-user sync)
+        (selections || [])
+          .filter(s => s.owner_slug === owner.slug)
+          .forEach(s => {
+            selectionMap[s.tier] = {
+              id: s.team_id,
+              name: s.team_name,
+              crest: s.team_crest
+            };
+          });
+
+        return {
+          ...owner,
+          selections: selectionMap
+        };
+      });
+
+      return { owners: ownersWithSelections };
+    }
+
+    function startPolling() {
+
       setInterval(async () => {
+
         const newState = await loadStateFromDB();
+        
+        state = {
+          ...state,                 // ✅ keep API data (points, results, teams)
+          owners: newState.owners   // ✅ ONLY overwrite DB-backed data
+        };
 
-        newState.availableTeams = state.availableTeams;
+        render();
 
-        if (JSON.stringify(newState.owners) !== JSON.stringify(state.owners)) {
-          state = newState;
-          render();
-        }
       }, 5000);
 
-    })();
+    }
 
     function migrateState(saved) {
       if (!saved.owners || !saved.fixtures) return structuredClone(defaultState);
@@ -1164,7 +1191,8 @@
         owner_slug: ownerSlug,
         tier: tierId,
         team_id: team?.id || null,
-        team_name: team?.name || null
+        team_name: team?.name || null,
+        team_crest: team?.crest || null
       }, {
         onConflict: "owner_slug,tier"
       });
@@ -1181,6 +1209,11 @@
     }
 
     function ensureRequestLog() {
+     
+      if (!state.api) {
+          state.api = {};
+        }
+
       if (!state.api.requestLog || state.api.requestLog.date !== todayKey()) {
         state.api.requestLog = { date: todayKey(), count: 0 };
       }
@@ -1321,7 +1354,10 @@
 
     function scoreTeam(team, tier, fixtures = state.fixtures) {
       if (!team?.id) return { total: 0, match: 0, bonus: 0, details: [] };
-      const relevant = fixtures.filter(item => isComplete(item) && fixtureIncludesTeam(item, team.id));
+
+      const safeFixtures = fixtures || []; 
+
+      const relevant = safeFixtures.filter(item => isComplete(item) && fixtureIncludesTeam(item, team.id));
       let match = 0;
       let bonus = 0;
       const flags = { round32: false, round16: false, quarterWin: false, semiWin: false, champion: false, runnerUp: false };
@@ -1348,11 +1384,17 @@
     }
 
     function ownerRows(fixtures = state.fixtures) {
+      
+      if (!Array.isArray(state.owners)) {
+        return [];
+      }
+
       return state.owners.map(owner => {
         const contributions = tiers.map(tier => {
-          const team = owner.selections[tier.id] || blankTeam();
-          const score = scoreTeam(team, tier, fixtures);
-          return { tier, team, ...score };
+          const team = owner.selections?.[tier.id];
+          const safeTeam = team || {id: null };
+          const score = scoreTeam(safeTeam, tier, fixtures);
+          return { tier, team: safeTeam, ...score };
         });
         const points = contributions.reduce((total, item) => total + item.total, 0);
         return { ...owner, contributions, points };
@@ -1372,27 +1414,45 @@
     }
 
     function render() {
+
+      if (!state || !state.owners) {
+          console.warn("render skipped — state not ready");
+          return;
+      }
+
       renderMetrics();
       renderStandings();
       renderLeagueCards();
       renderOwners();
       renderRules();
       renderMatches();
-      renderSelects();
+      //renderSelects();
       renderApi();
       renderHistory();
       //saveState();
     }
 
     function renderMetrics() {
+
+      if (!state || !Array.isArray(state.owners)) {
+        console.warn("renderMetrics skipped — state not ready");
+        return;
+      }
+
       const rows = ownerRows();
+
+      if (!Array.isArray(rows)) return;
+
+      const rowsSafe = ownerRows() || [];
+      const filtered = rowsSafe.filter(row => row);
+
       const selectedCount = state.owners.reduce((total, owner) => total + tiers.filter(tier => owner.selections[tier.id]?.id).length, 0);
       document.getElementById("metricLeader").textContent = rows[0] ? rows[0].name : "-";
       //document.getElementById("metricMatches").textContent = state.fixtures.filter(isComplete).length;
       document.getElementById("metricMatches").textContent = `${state.fixtures.filter(isComplete).length} / ${state.fixtures.length}`;
       document.getElementById("metricTeams").textContent = selectedCount;
       document.getElementById("lastUpdated").textContent = `Last synced: ${formatDateTime(state.api.lastSyncIso)}`;
-      document.getElementById("apiStatus").textContent = state.api.status || "Ready";
+      document.getElementById("apiStatus").textContent = status || "Ready";
     }
 
     function renderStandings() {
@@ -1407,8 +1467,8 @@
             <td>
               ${item.team?.name ? `
                 <div class="pill" style="display:flex;align-items:center;gap:6px;">                 
-                ${item.team.emblem 
-                  ? `<img src="${item.team.emblem}" class="team-flag">`
+                ${item.team?.crest 
+                  ? `<img src="${item.team.crest}" class="team-flag">`
                   : ""
                 }
                 ${item.team.name}
@@ -1491,8 +1551,8 @@
                   item.team?.name
                       ? `
                         <div style="display:flex;align-items:center;gap:6px;">
-                          ${item.team.emblem 
-                            ? `<img src="${item.team.emblem}" class="team-flag">`
+                          ${item.team.crest 
+                            ? `<img src="${item.team.crest}" class="team-flag">`
                             : ""
                           }
                           ${item.team.name}
@@ -1522,6 +1582,7 @@
             <strong>${owner.name}</strong>
             <div class="tier-list" style="margin-top:8px">${tiers.map(tier => {
               const team = owner.selections[tier.id] || blankTeam();
+              //console.log("Selections after update:",owner.selections);
               return `<span class="pill tier-pill"><strong>${tier.label}</strong>: ${team.name || "Empty"}</span>`;
             }).join("")}</div>
           </div>
@@ -1571,17 +1632,35 @@
 
     function renderMatches() {
       const completed = state.fixtures.filter(isComplete);
-      const latest = completed[completed.length - 1];
+      //const latest = completed[completed.length - 1];
       const impactList = document.getElementById("impactList");
 
-      if (!latest) {
+      /* if (!latest) {
         impactList.innerHTML = `<div class="empty">Sync or load results to see who gained points.</div>`;
       } else {
         const impacts = matchImpact(latest);
         impactList.innerHTML = `
           <div class="impact-item">
             <div>
-              <strong>${latest.home.name} ${latest.homeGoals}-${latest.awayGoals} ${latest.away.name}</strong>
+              <strong style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              ${
+                latest.home?.crest
+                  ? `<img src="${latest.home.crest}" class="team-flag">`
+                  : `<img src="https://crests.football-data.org/${latest.home.id}.svg" class="team-flag">`
+              }
+
+              ${latest.home.name}
+
+              ${latest.homeGoals}-${latest.awayGoals}
+
+              ${latest.away.name}
+
+              ${
+                latest.away?.crest
+                  ? `<img src="${latest.away.crest}" class="team-flag">`
+                  : `<img src="https://crests.football-data.org/${latest.away.id}.svg" class="team-flag">`
+              }
+            </strong>
               <div class="muted-row">${formatStage(latest.stage)}</div>
             </div>
             <span class="pill">Latest</span>
@@ -1596,12 +1675,58 @@
             </div>
           `).join("") || `<div class="empty">No selected teams in this fixture.</div>`}
         `;
+      } */
+     if (!completed.length) {
+        impactList.innerHTML = `<div class="empty">No results yet.</div>`;
+        return;
       }
+
+      const recentMatches = completed.slice(-3).reverse(); // newest first
+
+      impactList.innerHTML = recentMatches.map(match => {
+
+        const impacts = matchImpact(match);
+
+        return `
+          <div class="impact-item">
+            <div>
+              <strong style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                
+                ${match.home?.crest ? `<img src="${match.home.crest}" class="team-flag">` : ""}
+                ${match.home.name}
+
+                ${match.homeGoals}-${match.awayGoals}
+
+                ${match.away.name}
+                ${match.away?.crest ? `<img src="${match.away.crest}" class="team-flag">` : ""}
+                
+              </strong>
+
+              <div class="muted-row">${formatStage(match.stage)}</div>
+            </div>
+          </div>
+
+          ${impacts.map(item => `
+            <div class="impact-item">
+              <div>
+                <strong>${item.owner.name}</strong>
+                <div class="muted-row">${item.teams.join(", ")}</div>
+              </div>
+              <span class="score">+${formatPoints(item.points)}</span>
+            </div>
+          `).join("")}
+
+        `;
+      }).join("");
 
       document.getElementById("matchList").innerHTML = completed.map(item => `
         <div class="match-row">
           <div>
-            <strong>${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}</strong>
+            <strong style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              ${item.home?.crest ? `<img src="${item.home.crest}" class="team-flag">` : ""} 
+              ${item.home.name} ${item.homeGoals}-${item.awayGoals} ${item.away.name}
+              ${item.away?.crest ? `<img src="${item.away.crest}" class="team-flag">` : ""}
+            </strong>
             <div class="muted-row">${formatStage(item.stage)}${item.utcDate ? " / " + new Date(item.utcDate).toLocaleString() : ""}</div>
           </div>
           <span class="pill">${displayStatus(item.status)}</span>
@@ -1610,6 +1735,11 @@
     }
 
     function renderSelects() {
+
+      const currentOwner = document.getElementById("teamOwner").value;
+      const currentTier = document.getElementById("teamTier").value;
+      const currentTeam = document.getElementById("teamSelect").value;
+
       document.getElementById("teamOwner").innerHTML = state.owners.map(owner => `<option value="${owner.id}">${owner.name}</option>`).join("");
       document.getElementById("teamTier").innerHTML = tiers.map(tier => `<option value="${tier.id}">${tier.label}</option>`).join("");
       renderTeamOptions();
@@ -1625,7 +1755,6 @@
         ...state.availableTeams.map(team => {
           const disabled = unavailable.has(String(team.id)) ? "disabled" : "";
           const selected = current?.id && String(current.id) === String(team.id) ? "selected" : "";
-          const flag = team.flag ? `<img src="${item.team.flag}" class="flag">` : "";
           const label = unavailable.has(String(team.id)) ? `${team.name} - already picked` : team.name;
           return `<option value="${team.id}" ${disabled} ${selected}>${label}</option>`;
         })
@@ -1659,7 +1788,9 @@
 
     function renderHistory() {
       const svg = document.getElementById("historyChart");
-      const width = 900;
+      const width = 1000;
+      const labelOffset = 30;
+      const chartWidth = width * 0.95;
       const height = 260;
       const pad = 34;
       const completed = state.fixtures.filter(isComplete);
@@ -1672,8 +1803,11 @@
 
       const snapshots = completed.map((_, index) => ownerRows(completed.slice(0, index + 1)));
       const maxRank = Math.max(state.owners.length, 1);
-      const stepX = snapshots.length === 1 ? 0 : (width - pad * 2) / (snapshots.length - 1);
+      const stepX = snapshots.length === 1 ? 0 : (chartWidth - pad * 2) / (snapshots.length - 1);
       const stepY = maxRank === 1 ? 0 : (height - pad * 2) / (maxRank - 1);
+
+      //console.log("Fixtures count:", state.fixtures.length);
+      //console.log("Completed:", state.fixtures.filter(isComplete).length);
 
       const grid = Array.from({ length: maxRank }, (_, index) => {
         const y = pad + index * stepY;
@@ -1691,15 +1825,24 @@
       const labels = state.owners.map(owner => {
         const finalSnapshot = snapshots[snapshots.length - 1];
         const rank = finalSnapshot.findIndex(row => row.id === owner.id) + 1;
-        return `<text x="${width - pad + 8}" y="${pad + (rank - 1) * stepY + 5}" fill="${owner.color}" font-size="13" font-weight="700">${owner.name}</text>`;
+        return `<text x="${width - (pad + labelOffset)}" y="${pad + (rank - 1) * stepY + 5}" fill="${owner.color}" font-size="13" font-weight="700">${owner.name}</text>`;
       }).join("");
 
       svg.innerHTML = `${grid}${lines}${labels}`;
     }
 
     function updateApiStatus(status) {
+      
+      if(!state) return;
+
+      if (!state.api) {
+        state.api = {};
+      }
+
+      state.api.status = "loading";
       state.api.status = status;
-      render();
+
+      //render();
     }
 
     async function parseFunctionResponse(response) {
@@ -1780,7 +1923,7 @@
           .map(team => ({
             id: team.id,
             name: team.name,
-            crest: team.crest || team.crest || ""
+            crest: team.crest || `https://crests.football-data.org/${team.id}.svg`
           }))
           .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -1790,8 +1933,9 @@
         console.error("Teams error: ", err);
         updateApiStatus(err.message);
       }
+      if (!state) return;
 
-      render();
+      //render();
     }
 
 
@@ -1817,11 +1961,13 @@
 
             home: {
               id: match.homeTeam.id,
-              name: match.homeTeam.name
+              name: match.homeTeam.name,
+              crest: match.homeTeam.crest
             },
             away: {
               id: match.awayTeam.id,
-              name: match.awayTeam.name
+              name: match.awayTeam.name,
+              crest: match.awayTeam.crest
             },
 
             homeGoals: match.score?.fullTime?.home ?? null,
@@ -1838,12 +1984,18 @@
         state.api.status = err.message;
       }
 
-      scheduleAutoSync();
+      //scheduleAutoSync();
       render();
     }
 
 
         function scheduleAutoSync() {
+          
+          if (!state || !state.api) {
+            console.warn("Skipping auto sync — state not ready");
+            return;
+          }
+
           if (autoSyncTimer) {
             clearTimeout(autoSyncTimer);
             autoSyncTimer = null;
@@ -1989,7 +2141,13 @@
           await saveSelection(owner.slug, tierId, team);
 
           // ✅ Step 5: refresh
-          state = await loadStateFromDB();
+          const dbState = await loadStateFromDB();
+
+          state = {
+            ...state,
+            owners: dbState.owners
+          };
+
           render();
 
         } catch (err) {
@@ -2018,7 +2176,7 @@
     document.getElementById("autoSyncEnabled").addEventListener("change", event => {
       state.api.autoSync = event.target.checked;
       state.api.status = event.target.checked ? "Auto-sync enabled" : "Auto-sync paused";
-      scheduleAutoSync();
+      //scheduleAutoSync();
       render();
     });
 
@@ -2028,14 +2186,14 @@
       state.availableTeams = [];
       state.fixtures = [];
       state.api.status = "Sample data loaded";
-      scheduleAutoSync();
+      //scheduleAutoSync();
       render();
     });
 
     document.getElementById("clearFixtures").addEventListener("click", () => {
       state.fixtures = [];
       state.api.status = "Results cleared";
-      scheduleAutoSync();
+      //scheduleAutoSync();
       render();
     });
 
@@ -2048,7 +2206,7 @@
 
     document.getElementById("resetDemo").addEventListener("click", () => {
       state = structuredClone(defaultState);
-      scheduleAutoSync();
+      //scheduleAutoSync();
       render();
     });
 
@@ -2064,7 +2222,7 @@
 
     //render();
 
-    setInterval(async () => {
+    /* setInterval(async () => {
       const newState = await loadStateFromDB();
 
       if (JSON.stringify(newState.owners) !== JSON.stringify(state.owners)) {
@@ -2072,10 +2230,11 @@
         render();
       }
     }, 5000);
+    */
 
-    scheduleAutoSync();
+    //scheduleAutoSync();
 
-    // Updated: Thu 18 Jan 1250 UTC
+    // Updated: Thu 18 Jun 2026 1700 UTC
     
   </script>
 </body>

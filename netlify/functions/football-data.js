@@ -141,7 +141,8 @@ exports.handler = async function handler(event) {
     if (kind === "teams") {
       payload.teams = (payload.teams || []).map(t => ({
         id: t.id,
-        name: t.name
+        name: t.name,
+        crest: t.crest
       }));
     }
 
