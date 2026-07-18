@@ -90,17 +90,18 @@
       place-items: center;
       border-radius: 8px;
       color: white;
-      background: linear-gradient(135deg, var(--green), var(--teal) 55%, var(--coral));
+      background: linear-gradient(135deg, var(--green), var(--teal) 55%, var(--coral)); 
       font-weight: 800;
     }
 
     .team-flag {
       width: 18px;
       height: auto;
+      max-height: 12px;
       object-fit: contain;
       border-radius: 2px;
       vertical-align: middle;
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+      /* box-shadow: 0 0 0 1px rgba(0,0,0,0.1); */
     }
 
     h1 {
@@ -306,7 +307,7 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      min-height: 26px;
+      min-height: 32px;
       padding: 4px 9px;
       border: 1px solid var(--line);
       border-radius: 999px;
@@ -742,7 +743,7 @@
 
       <section class="section" id="matches">
         <div class="grid">
-          <div class="panel span-5">
+          <div class="panel span-12">
             <div class="panel-header">
               <h3>Result Feed</h3>
               <span class="pill" id="apiStatus">Sample data</span>
@@ -759,7 +760,7 @@
             </div>
           </div>
 
-          <div class="panel span-7">
+          <div class="panel span-3">
             <div class="panel-header">
               <h3>Latest Impact</h3>
             </div>
@@ -768,7 +769,7 @@
             </div>
           </div>
 
-          <div class="panel span-12">
+          <div class="panel span-9">
             <div class="panel-header">
               <h3>Completed Fixtures</h3>
             </div>
@@ -937,6 +938,7 @@
       { id: "round16", label: "Qualify for Round of 16", points: 3 },
       { id: "quarterWin", label: "Win Quarter-Final", points: 5 },
       { id: "semiWin", label: "Win Semi-Final", points: 8 },
+      { id: "thirdPlace", label: "Win Third-Place Playoff", points: 8 },
       { id: "champion", label: "World Cup Champion", points: 15 },
       { id: "runnerUp", label: "Runner up", points: 10 }
     ];
@@ -1312,6 +1314,7 @@
       if (s.includes("last_16") || s.includes("round of 16") || s.includes("1/8")) return "round16";
       if (s.includes("quarter")) return "quarter";
       if (s.includes("semi")) return "semi";
+      if (s.includes("third")) return "thirdPlace";
       if (s.includes("final")) return "final";
 
       return "group";
@@ -1360,7 +1363,7 @@
       const relevant = safeFixtures.filter(item => isComplete(item) && fixtureIncludesTeam(item, team.id));
       let match = 0;
       let bonus = 0;
-      const flags = { round32: false, round16: false, quarterWin: false, semiWin: false, champion: false, runnerUp: false };
+      const flags = { round32: false, round16: false, quarterWin: false, semiWin: false, thirdPlace: false, champion: false, runnerUp: false };
 
       relevant.forEach(item => {
         const result = teamResult(item, team.id);
@@ -1372,6 +1375,7 @@
         if (["round16", "quarter", "semi", "final"].includes(stage)) flags.round16 = true;
         if (stage === "quarter" && result === "win") flags.quarterWin = true;
         if (stage === "semi" && result === "win") flags.semiWin = true;
+        if (stage === "thirdPlace" && result === "win")  flags.thirdPlace = true;
         if (stage === "final" && result === "win") flags.champion = true;
         if (stage === "final" && result === "loss") flags.runnerUp = true;
       });
@@ -1499,7 +1503,10 @@
       document.getElementById("projectionBars").innerHTML = leader.contributions.map(item => `
         <div>
           <div class="bar-label"><strong>${item.tier.label}</strong><span>${formatPoints(item.total)} pts</span></div>
-          <div class="muted-row">${item.team.name || "No team selected"}: ${formatPoints(item.match)} match, ${formatPoints(item.bonus)} bonus</div>
+          <div class="muted-row">${item.team?.crest 
+                  ? `<img src="${item.team.crest}" class="team-flag"> `
+                  : ""
+                }${item.team.name || "No team selected"}: ${formatPoints(item.match)} match, ${formatPoints(item.bonus)} bonus</div>
           <div class="track"><div class="fill" style="width:${Math.max(4, item.total / maxContribution * 100)}%; background:${leader.color}"></div></div>
         </div>
       `).join("");
@@ -1783,7 +1790,12 @@
         <div class="api-row"><strong>Completed results</strong><span class="score">${state.fixtures.filter(isComplete).length}</span></div>
       `;
 
-      document.getElementById("apiTeamList").innerHTML = state.availableTeams.map(team => `<span class="pill">${team.name}</span>`).join(" ") || `<div class="empty">Sync teams or load sample data.</div>`;
+      document.getElementById("apiTeamList").innerHTML = state.availableTeams.map(team => `<span class="pill">
+        ${team?.crest 
+                  ? `<img src="${team.crest}" class="team-flag">`
+                  : ""
+                }
+                ${team.name}</span>`).join(" ") || `<div class="empty">Sync teams or load sample data.</div>`;
     }
 
     function renderHistory() {
@@ -2219,20 +2231,6 @@
       link.click();
       URL.revokeObjectURL(url);
     });
-
-    //render();
-
-    /* setInterval(async () => {
-      const newState = await loadStateFromDB();
-
-      if (JSON.stringify(newState.owners) !== JSON.stringify(state.owners)) {
-        state = newState;
-        render();
-      }
-    }, 5000);
-    */
-
-    //scheduleAutoSync();
 
     // Updated: Thu 18 Jun 2026 1700 UTC
     
